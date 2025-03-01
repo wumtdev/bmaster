@@ -1,6 +1,4 @@
 from pathlib import Path
-from typing import Optional
-from wauxio import Audio
 from wauxio.storage import FileSoundStorage
 
 from bmaster import logs
