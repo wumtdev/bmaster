@@ -34,7 +34,8 @@ async def start():
 	logger.info('Initializing session maker...')
 	LocalSession = sessionmaker(
 		bind=engine,
-		class_=AsyncSession
+		class_=AsyncSession,
+		expire_on_commit=False
 	)
 	logger.info('Session maker initialized')
 
