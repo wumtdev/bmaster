@@ -1,0 +1,4 @@
+
+
+class StartError(Exception):
+	pass
