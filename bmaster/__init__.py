@@ -1,7 +1,7 @@
 # init
 from bmaster.logs import logger
 
-import bmaster.config
+import bmaster.configs
 import bmaster.scheduling
 import bmaster.sounds
 import bmaster.icoms
@@ -16,7 +16,7 @@ import bmaster.api.sounds
 
 async def start():
 	logger.info("Starting config...")
-	await bmaster.config.start()
+	await bmaster.configs.start()
 	logger.info("Config started")
 
 	logger.info('Starting sounds...')

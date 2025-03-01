@@ -9,7 +9,7 @@ from bmaster.exc import StartError
 logger = logs.logger.getChild('config')
 
 CONFIG_PATH = "data/config.json"
-config: Optional[dict] = None
+main_config: Optional[dict] = None
 
 async def start():
 	logger.info("Loading main config...")
@@ -20,8 +20,8 @@ async def start():
 			if not isinstance(_data, dict):
 				logger.critical("Invalid main config")
 				raise StartError()
-			global config
-			config = _data
+			global main_config
+			main_config = _data
 		logger.info("Main config loaded")
 	except FileNotFoundError:
 		logger.critical("Main config file 'data/config.json' not found")
