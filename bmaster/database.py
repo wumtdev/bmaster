@@ -23,7 +23,7 @@ Base = declarative_base()
 
 async def start():
 	global config, engine, LocalSession
-	config = DatabaseConfig.model_validate(configs.main_config)
+	config = DatabaseConfig.model_validate(configs.main_config['database'])
 
 	logger.info('Initializing engine...')
 	engine = create_async_engine(
@@ -39,11 +39,9 @@ async def start():
 	logger.info('Session maker initialized')
 
 async def update_models():
-	logger.info('Updating models...')
 	global Base
 	async with engine.begin() as conn:
 		await conn.run_sync(Base.metadata.create_all)
-	logger.info('Models updated')
 
 async def stop():
 	logger.info('Stopping database...')

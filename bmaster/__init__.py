@@ -2,6 +2,7 @@
 from bmaster.logs import logger
 
 import bmaster.configs
+import bmaster.database
 import bmaster.scheduling
 import bmaster.sounds
 import bmaster.icoms
@@ -15,9 +16,14 @@ import bmaster.api.sounds
 
 
 async def start():
+	# START
 	logger.info("Starting config...")
 	await bmaster.configs.start()
 	logger.info("Config started")
+
+	logger.info('Starting database...')
+	await bmaster.database.start()
+	logger.info('Database started')
 
 	logger.info('Starting sounds...')
 	await bmaster.sounds.start()
@@ -30,6 +36,11 @@ async def start():
 	logger.info("Starting server...")
 	await bmaster.server.start()
 	logger.info("Server started")
+
+	# POST START
+	logger.info('Updating database models...')
+	await bmaster.database.update_models()
+	logger.info('Database models updated')
 
 async def stop():
 	logger.info("Stopping...")
