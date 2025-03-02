@@ -1,22 +1,38 @@
+import asyncio
 from typing import Any, Mapping, Optional
+from wauxio.output import AudioOutput
+from wauxio.mixer import AudioMixer
+from wauxio.utils import AudioStack
 
+from bmaster import direct, logs
 from bmaster.utils import aio
 from .queries import Query, QueryContext, ContextStatus
 from .mixer import TextMixer
 
 
+logger = logs.logger.getChild('icoms')
+
 class Icom:
 	name: str
 	queue: list[Query] = list()
 	playing: Optional[QueryContext] = None
-	mixer: TextMixer
+	mixer: AudioMixer
 	paused: bool = False
+	output: AudioOutput
 
 	def __init__(self, name: str):
 		self.name = name
-		self.mixer = TextMixer(
-			prefix="icom: "+name
+		mixer = AudioMixer()
+		output = AudioOutput(
+			rate=48000,
+			channels=2
 		)
+		output.connect(mixer.mix)
+		self.mixer = mixer
+		self.output = output
+	
+	def run(self):
+		return self.output.run(0.5)
 
 	def start(self):
 		if not self.paused: ValueError("Icom is not paused")
@@ -63,6 +79,11 @@ class Icom:
 			self.queue.append(query)
 	
 	def cancel_query(self, query: Query):
+		playing = self.playing
+		if playing and playing.query == query:
+			playing.stop()
+			self._on_playing_finished()
+			return
 		self.queue.remove(query)
 	
 	def _take_next_query(self) -> Optional[Query]:
@@ -92,9 +113,26 @@ class Icom:
 		if query: self._play_query(query)
 
 
-_icoms_map: Mapping[str, Icom] = {
-	'main': Icom("main")
-}
+_icoms_map: Mapping[str, Icom] = dict()
 
 def get(name: str) -> Optional[Icom]:
 	return _icoms_map.get(name, None)
+
+async def start():
+	logger.info('Starting main icom...')
+	main_icom = Icom('main')
+	_icoms_map['main'] = main_icom
+	asyncio.create_task(main_icom.run())
+
+
+	rate = main_icom.output.rate
+	channels = main_icom.output.channels
+	stack = AudioStack(
+		rate=rate,
+		channels=channels,
+		samples=int(rate * direct.DELAY * 2)
+	)
+	main_icom.output.listen(stack.push)
+	direct.output_mixer.add(stack.pull)
+
+	logger.info('Main icom started')

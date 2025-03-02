@@ -3,6 +3,7 @@ uvicorn
 fastapi
 sounddevice
 git+https://github.com/wumtdev/wauxio.git
+git+https://github.com/wumtdev/wsignals.git
 aiosqlite
 SQLAlchemy
 APScheduler

@@ -12,7 +12,6 @@ class PlaySoundRequest(BaseModel):
 	name: str
 	priority: int = 0
 	force: bool = False
-	duration: float = 10.0
 
 
 @app.post("/icoms/play_sound")
@@ -24,7 +23,6 @@ async def play_sound(req: PlaySoundRequest):
 	query = SoundQuery(
 		name = req.name,
 		priority = req.priority,
-		force = req.force,
-		duration = req.duration
+		force = req.force
 	)
 	icom.add_query(query)

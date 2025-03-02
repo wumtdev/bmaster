@@ -1,8 +1,11 @@
 from typing import Any, Optional
 from enum import Enum
+from wauxio.mixer import AudioMixer
+from wauxio import AudioReader
 
+from bmaster import sounds
 from bmaster.icoms.mixer import Sound, TextMixer
-from bmaster.utils.signals import Signal
+from wsignals import Signal
 
 class ContextStatus(Enum):
 	WAITING = 0
@@ -11,13 +14,13 @@ class ContextStatus(Enum):
 	FINISHED = 3
 
 class QueryContext:
-	mixer: TextMixer
+	mixer: AudioMixer
 	query: "Query"
 	finished: Signal
 	stopped: Signal
 	status = ContextStatus.WAITING
 
-	def __init__(self, mixer: Any, query: "Query"):
+	def __init__(self, mixer: AudioMixer, query: "Query"):
 		self.mixer = mixer
 		self.query = query
 		
@@ -45,22 +48,16 @@ class SoundQuery(Query):
 	name: str
 	priority: int
 	force: bool
-	duration: int
 
-	def __init__(self, name: str, priority: int = 0, force: bool = False, duration: float = 3.0):
+	def __init__(self, name: str, priority: int = 0, force: bool = False):
 		self.name = name
 		self.priority = priority
 		self.force = force
-		self.duration = duration
 
 	def play(self, ctx: QueryContext):
 		mixer = ctx.mixer
-		sound = Sound(mixer, self.duration, self.name)
 
-		@sound.end
-		def on_sound_end():
-			ctx.finish()
-		
-		ctx.stopped.connect(sound.stop)
-		
-		sound.play()
+		sound = AudioReader(sounds.storage.get(self.name))
+		sound.end.connect(ctx.finish)
+		ctx.stopped.connect(sound.close)
+		mixer.add(sound)

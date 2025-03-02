@@ -3,8 +3,7 @@
 import asyncio
 from asyncio import CancelledError, Task
 from typing import Optional
-from bmaster.utils import aio
-from bmaster.utils.signals import Signal
+from wsignals import Signal
 
 
 class TextMixer:
