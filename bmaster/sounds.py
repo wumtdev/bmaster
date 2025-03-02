@@ -17,10 +17,7 @@ storage = FileSoundStorage(
 )
 
 
-def wave_codec(path) -> Audio:
-	with wave.open(str(path), 'rb') as wf:
-		return from_wav(wf)
-storage.use_sync_codec('.wav', wave_codec)
+storage.use_sync_codec('.wav', from_wav)
 
 
 async def start():
