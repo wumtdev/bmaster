@@ -1,13 +1,12 @@
 import asyncio
-from typing import Any, Mapping, Optional
+from typing import Mapping, Optional
 from wauxio.output import AudioOutput
 from wauxio.mixer import AudioMixer
 from wauxio.utils import AudioStack
 
 from bmaster import direct, logs
 from bmaster.utils import aio
-from .queries import Query, QueryContext, ContextStatus
-from .mixer import TextMixer
+from .queries import PlayOptions, Query
 
 
 logger = logs.logger.getChild('icoms')
@@ -15,7 +14,7 @@ logger = logs.logger.getChild('icoms')
 class Icom:
 	name: str
 	queue: list[Query] = list()
-	playing: Optional[QueryContext] = None
+	playing: Optional[Query] = None
 	mixer: AudioMixer
 	paused: bool = False
 	output: AudioOutput
@@ -45,12 +44,12 @@ class Icom:
 		self.paused = True
 
 		playing = self.playing
-		if self.playing:
+		if playing:
 			playing.stop()
 			self.playing = None
-			self.add_query(playing.query)
+			self._add_query(playing)
 
-	def add_query(self, query: Query):
+	def _add_query(self, query: Query):
 		if not self.paused:
 			# directly play new query without queue if icom is free
 			if not self.playing:
@@ -60,30 +59,24 @@ class Icom:
 			# check if new query can interrupt playing queries (is force)
 			if query.force:
 				playing = self.playing
-				q = playing.query
 				# check if new query has a higher priority than playing query
-				if query.force > q.force or query.priority > q.priority:
+				if query.force > playing.force or query.priority > playing.priority:
 					# stop playing query and play new query instead
 					playing.stop()
 					self.playing = None
 					self._play_query(query)
-					self.add_query(q)
+					self._add_query(playing)
 					return
 		
 		# insert a new request into the queue by sorting priority
-		for i, q in enumerate(self.queue):
-			if query.force > q.force or query.priority > q.priority:
+		for i, playing in enumerate(self.queue):
+			if query.force > playing.force or query.priority > playing.priority:
 				self.queue.insert(i, query)
 				break
 		else:
 			self.queue.append(query)
 	
-	def cancel_query(self, query: Query):
-		playing = self.playing
-		if playing and playing.query == query:
-			playing.stop()
-			self._on_playing_finished()
-			return
+	def _remove_query(self, query: Query):
 		self.queue.remove(query)
 	
 	def _take_next_query(self) -> Optional[Query]:
@@ -94,18 +87,12 @@ class Icom:
 		return query
 
 	def _play_query(self, query: Query):
-		if self.playing: raise RuntimeError("There's already playing context")
-
-		ctx = QueryContext(
-			mixer=self.mixer,
-			query=query
+		if self.playing: raise RuntimeError("There's already playing query")
+		options = PlayOptions(
+			mixer=self.mixer
 		)
-
-		# attach finish handler to proccess next query
-		ctx.finished.connect(self._on_playing_finished)
-
-		self.playing = ctx
-		aio.run(query.play(ctx))
+		self.playing = query
+		aio.run(query.play(options))
 
 	def _on_playing_finished(self):
 		self.playing = None

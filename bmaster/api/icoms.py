@@ -1,6 +1,6 @@
-from typing import Optional
-from fastapi import Request
+from uuid import UUID
 from pydantic import BaseModel
+from fastapi import HTTPException
 
 from bmaster.server import app
 import bmaster.icoms as icoms
@@ -17,12 +17,21 @@ class PlaySoundRequest(BaseModel):
 @app.post("/icoms/play_sound")
 async def play_sound(req: PlaySoundRequest):
 	icom = icoms.get(req.icom)
-	if not icom: 
-		from fastapi import HTTPException
+	if not icom:
 		raise HTTPException(status_code=404, detail="Icom not found")
 	query = SoundQuery(
-		name = req.name,
-		priority = req.priority,
-		force = req.force
+		icom=icom,
+		name=req.name,
+		priority=req.priority,
+		force=req.force
 	)
-	icom.add_query(query)
+	
+	return {"uuid": query.id}
+
+@app.delete('/queries/{uuid}')
+async def cancel_query(uuid: str):
+	query = icoms.queries.get_by_id(UUID(uuid))
+	if not query:
+		raise HTTPException(status_code=404, detail="Query not found")
+	query.cancel()
+	return {"status": "cancelled"}
