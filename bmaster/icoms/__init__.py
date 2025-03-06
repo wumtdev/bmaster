@@ -1,15 +1,24 @@
 import asyncio
 from typing import Mapping, Optional
+from pydantic import BaseModel
 from wauxio.output import AudioOutput
 from wauxio.mixer import AudioMixer
 from wauxio.utils import AudioStack
 
 from bmaster import direct, logs
 from bmaster.utils import aio
-from .queries import PlayOptions, Query
+from .queries import PlayOptions, Query, QueryInfo
 
 
 logger = logs.logger.getChild('icoms')
+
+
+class IcomInfo(BaseModel):
+	name: str
+	playing: Optional[QueryInfo]
+	queue: list[QueryInfo]
+	paused: bool
+
 
 class Icom:
 	name: str
@@ -98,6 +107,15 @@ class Icom:
 		self.playing = None
 		query = self._take_next_query()
 		if query: self._play_query(query)
+	
+	def get_info(self) -> IcomInfo:
+		playing = self.playing
+		return IcomInfo(
+			name=self.name,
+			playing=playing.get_info() if self.playing else None,
+			queue=list(map(Query.get_info, self.queue)),
+			paused=self.paused
+		)
 
 
 _icoms_map: Mapping[str, Icom] = dict()

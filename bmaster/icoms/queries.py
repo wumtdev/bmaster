@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Coroutine, Mapping, Optional, TYPE_CHECKING
 from enum import Enum
 import uuid
+from pydantic import BaseModel
 from wauxio.mixer import AudioMixer
 from wauxio import AudioReader
 
@@ -13,18 +14,30 @@ if TYPE_CHECKING:
 
 
 class QueryStatus(Enum):
-	WAITING = 0
-	PLAYING = 1
-	FINISHED = 2
-	CANCELLED = 3
+	WAITING = 'waiting'
+	PLAYING = 'playing'
+	FINISHED = 'finished'
+	CANCELLED = 'cancelled'
 
 @dataclass(frozen=True)
 class PlayOptions:
 	mixer: AudioMixer
 
+class QueryInfo(BaseModel):
+	id: uuid.UUID
+	name: Optional[str]
+	description: Optional[str]
+	icom: str
+	priority: int
+	force: bool
+	duration: Optional[float]
+	status: QueryStatus
+
 # abstract/virtual
 class Query:
 	id: uuid.UUID
+	name: Optional[str] = None
+	description: Optional[str] = None
 	icom: "Icom"
 	duration: Optional[float] = None
 	priority: int = 0
@@ -64,15 +77,33 @@ class Query:
 		self.status = QueryStatus.FINISHED
 		del _queries_map[self.id]
 		self.icom._on_playing_finished()
+	
+	def get_info(self) -> QueryInfo:
+		return QueryInfo(
+			id=self.id,
+			name=self.name,
+			description=self.description,
+			icom=self.icom.name,
+			priority=self.priority,
+			force=self.force,
+			duration=self.duration,
+			status=self.status
+		)
+
+
+class SoundQueryInfo(QueryInfo):
+	sound_name: str
 
 class SoundQuery(Query):
-	name: str
+	name = 'sounds.sound'
+	sound_name: str
 	priority: int
 	force: bool
 	sound: Optional[AudioReader] = None
 
-	def __init__(self, icom: "Icom", name: str, priority: int = 0, force: bool = False):
-		self.name = name
+	def __init__(self, icom: "Icom", sound_name: str, priority: int = 0, force: bool = False):
+		self.description = f"Playing sound: '{sound_name}'"
+		self.sound_name = sound_name
 		self.priority = priority
 		self.force = force
 		super().__init__(icom)
@@ -81,7 +112,7 @@ class SoundQuery(Query):
 		super().play(options)
 		mixer = options.mixer
 
-		sound = AudioReader(sounds.storage.get(self.name))
+		sound = AudioReader(sounds.storage.get(self.sound_name))
 		self.sound = sound
 		sound.end.connect(self.finish)
 		mixer.add(sound)
@@ -90,6 +121,13 @@ class SoundQuery(Query):
 		self.sound.close()
 		self.sound = None
 		super().stop()
+	
+	def get_info(self):
+		data = super().get_info()
+		return SoundQueryInfo(
+			**data.dict(),
+			sound_name=self.sound_name
+		)
 
 
 _queries_map: Mapping[uuid.UUID, Query] = dict()
