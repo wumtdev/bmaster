@@ -11,9 +11,6 @@ import bmaster.icoms.queries
 import bmaster.server
 import bmaster.scripting
 import bmaster.api
-import bmaster.api.auth
-import bmaster.api.icoms
-import bmaster.api.sounds
 
 
 async def start():
@@ -41,10 +38,18 @@ async def start():
 	logger.info("Starting scheduling...")
 	await bmaster.scheduling.start()
 	logger.info("Scheduling started")
+
+	logger.info("Starting scripting...")
+	await bmaster.scripting.start()
+	logger.info("Scripting started")
 	
 	logger.info("Starting server...")
 	await bmaster.server.start()
 	logger.info("Server started")
+
+	logger.info('Starting api..')
+	await bmaster.api.start()
+	logger.info('Api started')
 
 	# POST START
 	logger.info('Updating database models...')

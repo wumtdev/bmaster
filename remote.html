@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audio Stream</title>
+</head>
+<body>
+  <h1>Audio Stream</h1>
+	<!-- <button id="listen">Listen</button> -->
+	<button id="speak">Speak</button>
+	<button id="stop">Stop</button>
+	<p id="monitor">No report</p>
+  <script>
+		{
+			function concatArrays(a, b) {
+				const concated = new Float32Array(a.length + b.length);
+				concated.set(a);
+				concated.set(b, a.length);
+				return concated;
+			}
+
+			const listenButton = document.querySelector('#listen');
+			// const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+			let audioContext = null;
+
+			let rate = null;
+			let channels = null;
+			let chunkDuration = null;
+			let chunkSize = null;
+
+			let queueBuffer = new Float32Array();
+			let chunkQueue = [];
+			let isPlaying = false;
+			let proccessorNode = null;
+
+			let dd = 200;
+
+
+			const monitor = document.querySelector('#monitor');
+			function refreshMonitor() {
+				let report = 'Media report<br>';
+				report += `Rate: ${rate}<br>`;
+				report += `Channels: ${channels}<br>`;
+				report += `Chunk: size ${chunkSize}, duration ${chunkDuration}<br>`;
+				report += `<br>Buffer: size ${queueBuffer.length}, duration ${queueBuffer.length / rate}<br>`;
+				report += `<br>Frames: count ${chunkQueue.length}`;
+				monitor.innerHTML = report;
+			}
+
+			function queueExtractor(e) {
+				if (chunkQueue.length !== 0)
+					e.outputBuffer.copyToChannel(chunkQueue.shift(), 0);
+			}
+
+			let ws = null;
+			let accepted = false;
+
+			function wsOpen() {
+				console.log("WS: Opened");
+			}
+
+			function stop() {
+				ws = null;
+				accepted = false;
+			}
+
+			function wsError(e) {
+				console.error("WS: Error", e);
+				stop();
+			}
+
+			function wsClose() {
+				console.log("WS: Closed");
+				stop();
+			}
+
+			async function wsMessage(e) {
+				if (!accepted) {
+					let desc;
+					try {
+						desc = JSON.parse(event.data);
+						if (typeof desc.rate != 'number' || typeof desc.channels != 'number' ||  typeof desc.chunkSize != 'number')
+							throw null;
+					}
+					catch (e) {
+						console.error('Invalid header', e);
+						ws.close();
+						ws = null;
+						return;
+					}
+
+					const oldRate = rate;
+					rate = desc.rate;
+					channels = desc.channels;
+					chunkSize = desc.chunkSize;
+
+					if (audioContext) audioContext.close();
+					audioContext = new (window.AudioContext || window.webkitAudioContext)({
+						sampleRate: rate
+					});
+					// proccessorNode.disconnect();
+					proccessorNode = audioContext.createScriptProcessor(chunkSize, 1, 1);
+					proccessorNode.onaudioprocess = queueExtractor;
+					proccessorNode.connect(audioContext.destination);
+
+					accepted = true;
+					return;
+				}
+
+				const audioBuffer = new Float32Array(event.data);
+				chunkQueue.push(audioBuffer);
+				refreshMonitor();
+			}
+
+			function connect() {
+				ws = new WebSocket("ws://localhost:8765/listen");
+				ws.binaryType = "arraybuffer";
+				ws.onopen = wsOpen;
+				ws.onerror = wsError;
+				ws.onclose = wsClose;
+				ws.onmessage = wsMessage;
+			}
+			
+			async function start() {
+				connect();
+			}
+			
+			listenButton.addEventListener('click', start);
+		}
+  </script>
+	<script>
+		{
+			const speakButton = document.querySelector('#speak');
+			const stopButton = document.querySelector('#stop');
+
+			let ws = null;
+
+			let stream = null;
+			let audioContext = null;
+			let streamNode = null;
+			let processorNode = null;
+
+			const rate = 48000;
+			const channels = 1;
+			let isPlaying = false;
+
+			function wsOpen() {
+				console.log("WS: Opened");
+
+				ws.send(JSON.stringify({
+					icom: "main",
+					rate: rate,
+					channels: channels,
+					priority: 2,
+					force: true
+				}));
+			}
+
+			async function stop() {
+				streamNode.disconnect();
+				streamNode = null;
+				processorNode.disconnect();
+				processorNode = null;
+				await audioContext.close();
+				ws = null;
+			}
+
+			function wsError(e) {
+				console.error("WS: Error", e);
+				stop();
+			}
+
+			function wsClose() {
+				console.log("WS: Closed");
+				stop();
+			}
+
+			function processAudio(e) {
+				if (!isPlaying) return;
+				const data = new Float32Array(e.inputBuffer.getChannelData(0));
+				ws.send(data.buffer);
+			}
+
+			async function wsMessage(e) {
+				console.log(`WS Message: ${e.data}`);
+				let msg = JSON.parse(e.data);
+				switch (msg.type) {
+					case 'started':
+						isPlaying = true;
+						break;
+					case 'stopped':
+						isPlaying = false;
+						break;
+				}
+			}
+
+			async function start() {
+				ws = new WebSocket("ws://localhost:8000/queries/stream");
+				ws.binaryType = "arraybuffer";
+				ws.onopen = wsOpen;
+				ws.onerror = wsError;
+				ws.onclose = wsClose;
+				ws.onmessage = wsMessage;
+
+				stream = await navigator.mediaDevices.getUserMedia({
+					audio: {
+						sampleRate: rate,
+						channelCount: channels
+					},
+					video: false
+				});
+
+				audioContext = new (window.AudioContext || window.webkitAudioContext)({
+					sampleRate: rate
+				});
+
+				streamNode = audioContext.createMediaStreamSource(stream);
+
+				processorNode = audioContext.createScriptProcessor(8192, 1, 1);
+				processorNode.onaudioprocess = processAudio;
+
+				streamNode.connect(processorNode);
+				processorNode.connect(audioContext.destination);
+			}
+
+			speakButton.addEventListener('click', start);
+			stopButton.addEventListener('click', () => {
+				ws.close();
+			});
+		}
+	</script>
+</body>
+</html>

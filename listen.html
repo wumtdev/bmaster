@@ -1,0 +1,108 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Listen</title>
+</head>
+
+<body>
+	<h1>Stream Listener</h1>
+	<button id="listen">Listen</button>
+	<button id="stop">Stop</button>
+	<p id="monitor">No report</p>
+	<script>
+		const listenButton = document.getElementById('listen');
+		const stopButton = document.getElementById('stop');
+		
+		let rate = 48000;
+		let channels = 1;
+
+		let chunkSize = 16384;
+		let chunkDuration = 0.5;
+		let chunkQueue = [];
+		const icom = 'main';
+
+		let isPlaying = false;
+		let isAccepted = false;
+
+		// const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+		let audioContext = null;
+		let proccessorNode = null;
+
+		let ws = null;
+
+		
+		function stop() {
+			ws = null;
+			isAccepted = false;
+		}
+
+		function wsOpen() {
+			console.log("WS Opened");
+			ws.send(JSON.stringify({
+				icom: icom,
+				rate: rate,
+				channels: channels,
+				chunk_size: chunkSize
+			}));
+		}
+
+
+		function wsError(e) {
+			console.error("WS Error", e);
+			stop();
+		}
+
+		function wsClose() {
+			console.log("WS Closed");
+			stop();
+		}
+
+		async function wsMessage(e) {
+			if (isAccepted) {
+				chunkQueue.push(new Float32Array(event.data));
+				return;
+			}
+
+			console.log(`WS Message: ${e.data}`);
+			let msg;
+
+			try { msg = JSON.parse(e.data); }
+			catch (e) {
+				console.error('Invalid JSON', e);
+				ws.close();
+				return;
+			}
+			
+			if (msg.type === 'listening') isAccepted = true;
+			else ws.close();
+		}
+
+		function audioProcessor(e) {
+			if (chunkQueue.length !== 0)
+				e.outputBuffer.copyToChannel(chunkQueue.shift(), 0);
+		}
+		
+		async function start() {
+			ws = new WebSocket("ws://localhost:8000/icoms/listen");
+			ws.binaryType = "arraybuffer";
+			ws.onopen = wsOpen;
+			ws.onerror = wsError;
+			ws.onclose = wsClose;
+			ws.onmessage = wsMessage;
+
+			if (!audioContext) {
+				audioContext = new (window.AudioContext || window.webkitAudioContext)({
+					sampleRate: rate
+				});
+				proccessorNode = audioContext.createScriptProcessor(chunkSize, 1, 1);
+				proccessorNode.onaudioprocess = audioProcessor;
+				proccessorNode.connect(audioContext.destination);
+			}
+		}
+		
+		listenButton.addEventListener('click', start);
+		stopButton.addEventListener('click', () => { ws.close(); });
+	</script>
+</body>
+</html>

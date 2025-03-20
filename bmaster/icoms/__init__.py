@@ -129,7 +129,6 @@ async def start():
 	_icoms_map['main'] = main_icom
 	asyncio.create_task(main_icom.run())
 
-
 	rate = main_icom.output.rate
 	channels = main_icom.output.channels
 	stack = AudioStack(

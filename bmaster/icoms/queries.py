@@ -4,7 +4,8 @@ from enum import Enum
 import uuid
 from pydantic import BaseModel
 from wauxio.mixer import AudioMixer
-from wauxio import AudioReader
+from wauxio import Audio, AudioReader, IAudioReader, StreamOptions, StreamData
+from wsignals import Signal
 
 from bmaster import sounds
 
@@ -44,11 +45,24 @@ class Query:
 	force: bool = False
 	status: QueryStatus = QueryStatus.WAITING
 
+	on_play: Signal
+	on_stop: Signal
+	on_finish: Signal
+	on_cancel: Signal
+
 	def __init__(self, icom: "Icom"):
+		self.on_play = Signal()
+		self.on_stop = Signal()
+		self.on_finish = Signal()
+		self.on_cancel = Signal()
+
 		self.icom = icom
+
 		query_id = uuid.uuid4()
 		self.id = query_id
+
 		_queries_map[query_id] = self
+
 		icom._add_query(self)
 
 	def cancel(self):
@@ -63,20 +77,24 @@ class Query:
 			case _:
 				raise RuntimeError(f'Could not cancel query with status {status}')
 		self.status = QueryStatus.CANCELLED
+		del _queries_map[self.id]
+		self.on_cancel.call()
 
 	def play(self, options: PlayOptions) -> None | Coroutine:
 		self.status = QueryStatus.PLAYING
+		self.on_play.call()
 	
 	def stop(self):
 		if self.status != QueryStatus.PLAYING:
 			raise RuntimeError('Query is not playing')
-		del _queries_map[self.id]
 		self.status = QueryStatus.WAITING
+		self.on_stop.call()
 	
 	def finish(self):
 		self.status = QueryStatus.FINISHED
 		del _queries_map[self.id]
 		self.icom._on_playing_finished()
+		self.on_finish.call()
 	
 	def get_info(self) -> QueryInfo:
 		return QueryInfo(
@@ -99,7 +117,7 @@ class SoundQuery(Query):
 	sound_name: str
 	priority: int
 	force: bool
-	sound: Optional[AudioReader] = None
+	player: Optional[AudioReader] = None
 
 	def __init__(self, icom: "Icom", sound_name: str, priority: int = 0, force: bool = False):
 		self.description = f"Playing sound: '{sound_name}'"
@@ -112,14 +130,14 @@ class SoundQuery(Query):
 		super().play(options)
 		mixer = options.mixer
 
-		sound = AudioReader(sounds.storage.get(self.sound_name))
-		self.sound = sound
-		sound.end.connect(self.finish)
-		mixer.add(sound)
+		player = AudioReader(sounds.storage.get(self.sound_name))
+		self.player = player
+		player.end.connect(self.finish)
+		mixer.add(player)
 	
 	def stop(self):
-		self.sound.close()
-		self.sound = None
+		self.player.close()
+		self.player = None
 		super().stop()
 	
 	def get_info(self):
@@ -129,6 +147,61 @@ class SoundQuery(Query):
 			sound_name=self.sound_name
 		)
 
+class AudioQuery(Query):
+	name = 'audio'
+	audio: Audio
+	priority: int
+	force: bool
+	player: Optional[AudioReader] = None
+
+	def __init__(self, icom: "Icom", audio: Audio, priority: int = 0, force: bool = False):
+		self.description = "Playing plain audio"
+		self.audio = audio
+		self.priority = priority
+		self.force = force
+		super().__init__(icom)
+
+	def play(self, options: PlayOptions):
+		super().play(options)
+		mixer = options.mixer
+
+		player = AudioReader(self.audio)
+		self.player = player
+		player.end.connect(self.finish)
+		mixer.add(player)
+	
+	def stop(self):
+		self.player.close()
+		self.player = None
+		super().stop()
+
+class StreamQuery(Query):
+	name = 'stream'
+	stream: IAudioReader
+	priority: int
+	force: bool
+
+	def __init__(self, icom: "Icom", stream: IAudioReader, priority: int = 0, force: bool = False):
+		self.description = "Playing plain audio stream"
+		self.stream = stream
+		self.priority = priority
+		self.force = force
+		super().__init__(icom)
+	
+	def _read(self, options: StreamOptions) -> StreamData:
+		frame = self.stream(options)
+		if frame.last: self.finish()
+		return frame
+
+	def play(self, options: PlayOptions):
+		super().play(options)
+		mixer = options.mixer
+		mixer.add(self._read)
+	
+	def stop(self):
+		self.player.close()
+		self.player = None
+		super().stop()
 
 _queries_map: Mapping[uuid.UUID, Query] = dict()
 

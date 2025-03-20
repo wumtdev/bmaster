@@ -2,6 +2,7 @@ import asyncio
 from asyncio import Task
 from typing import Optional
 from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
 import uvicorn
 
 from bmaster import logs
@@ -28,3 +29,14 @@ async def start():
 	server = uvicorn.Server(config)
 	serving = asyncio.create_task(server.serve())
 	logger.info("Uvicorn started")
+
+@app.get('/remote', response_class=HTMLResponse)
+async def remote_get():
+	with open('remote.html', 'r') as file:
+		return file.read()
+	
+@app.get('/listen', response_class=HTMLResponse)
+async def listen_get():
+	with open('listen.html', 'r') as file:
+		return file.read()
+
