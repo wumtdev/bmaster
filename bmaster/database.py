@@ -1,5 +1,6 @@
 from typing import Optional
 from pydantic import BaseModel
+from sqlalchemy import TypeDecorator, JSON
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -47,3 +48,17 @@ async def stop():
 	logger.info('Stopping database...')
 	await engine.dispose()
 	logger.info('Database stopped')
+
+
+class JSONModel(TypeDecorator):
+	impl = JSON
+
+	def __init__(self, pydantic_model: type[BaseModel], *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		self.pydantic_model = pydantic_model
+
+	def process_bind_param(self, value: BaseModel | None, dialect):
+		return value.model_dump() if value is not None else None
+
+	def process_result_value(self, value: dict | None, dialect):
+		return self.pydantic_model.model_validate(value) if value is not None else None
