@@ -10,4 +10,5 @@
 **/.vscode
 
 # Testing/temporary stuff
-**/data
+data
+addons

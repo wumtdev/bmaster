@@ -1,4 +1,5 @@
 # init
+import bmaster.addons
 from bmaster.logs import logger
 
 import bmaster.configs
@@ -50,6 +51,10 @@ async def start():
 	logger.info('Starting api..')
 	await bmaster.api.start()
 	logger.info('Api started')
+
+	logger.info('Starting addons...')
+	await bmaster.addons.start()
+	logger.info('Addons started')
 
 	# POST START
 	logger.info('Updating database models...')
