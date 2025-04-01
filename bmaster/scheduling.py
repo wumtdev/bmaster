@@ -1,9 +1,9 @@
 from datetime import datetime
-from typing import Mapping, Optional, Self, Type, Union
+from typing import Any, Coroutine, Literal, Optional, Self, Type, Union
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.executors.asyncio import AsyncIOExecutor
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
-from pydantic import BaseModel, Field, field_validator, model_validator, validator
+from pydantic import BaseModel, Field, ModelWrapValidatorHandler, field_validator, model_validator
 
 from bmaster import configs, logs
 
@@ -38,31 +38,41 @@ async def stop():
 	logger.info("Scheduler stopped")
 
 
-trigger_type_map: Mapping[str, Type['JobTrigger']] = dict()
+TRIGGER_REGISTRY: dict[str, Type['JobTrigger']] = {}
+
+def register_trigger(cls: Type['JobTrigger']) -> Type['JobTrigger']:
+	"""Decorator to register trigger type"""
+	type_field = cls.model_fields.get('type', None)
+	if not type_field:
+		raise ValueError("Trigger must have 'type' field")
+	TRIGGER_REGISTRY[type_field.default] = cls  # type: ignore
+	return cls
 
 class JobTrigger(BaseModel):
-	type: str
+	"""Base trigger model"""
+
+	type: str = Field(..., description="Trigger type discriminator")
 	timezone: Optional[str] = None
 
-	def job_kwargs(self) -> dict:
+	def job_kwargs(self) -> Coroutine[Any, Any, None]:
 		raise NotImplementedError()
-
-	def __init_subclass__(cls, **kwargs):
-		super().__init_subclass__(**kwargs)
-		if hasattr(cls, 'type'):
-			event_type = cls.model_fields['type'].default
-			trigger_type_map[event_type] = cls
-
-	@model_validator(mode='after')
-	def resolve_event_type(self: Self) -> Self:
-		if type(self) != Self: return self
-		model = trigger_type_map.get(self.type, None)
-		if model:
-			return model.model_validate(self)
+	
+	@model_validator(mode='wrap')
+	@classmethod
+	def validate_type(cls, data: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
+		trigger = handler(data)
+		if cls is not JobTrigger: return trigger
+		trigger_type = trigger.type
+		trigger_class = TRIGGER_REGISTRY.get(trigger_type, None)
+		if not trigger_class:
+			raise ValueError(f"Unknown trigger type: {trigger_type}")
+		
+		return trigger_class.model_validate(data)
 
 # --- Date Trigger ---
+@register_trigger
 class DateTrigger(JobTrigger):
-	type: str = Field(default="date", frozen=True)
+	type: Literal['date'] = "date"
 	run_date: Union[datetime, str] = Field(default_factory=datetime.now)
 
 	@field_validator("run_date", mode="before")
@@ -80,8 +90,9 @@ class DateTrigger(JobTrigger):
 		}
 
 # --- Interval Trigger ---
+@register_trigger
 class IntervalTrigger(JobTrigger):
-	type: str = Field(default="interval", frozen=True)
+	type: Literal['interval'] = 'interval'
 	weeks: int = 0
 	days: int = 0
 	hours: int = 0
@@ -118,8 +129,9 @@ class IntervalTrigger(JobTrigger):
 		}
 
 # --- Cron Trigger ---
+@register_trigger
 class CronTrigger(JobTrigger):
-	type: str = Field(default="cron", frozen=True)
+	type: Literal['cron'] = 'cron'
 	year: Union[str, int] = "*"
 	month: Union[str, int] = "*"
 	day: Union[str, int] = "*"
