@@ -106,9 +106,8 @@ class ScriptTask(Base):
 	
 	async def delete(self):
 		scheduler.remove_job(f'bmaster.scripting.scripted_task#{self.id}')
-		async with database.LocalSession() as session:
-			async with session.begin():
-				session.delete(self)
+		async with database.LocalSession() as session, session.begin():
+			session.delete(self)
 	
 	def get_info(self) -> ScriptTaskInfo:
 		return ScriptTaskInfo(
@@ -120,7 +119,7 @@ class ScriptTask(Base):
 async def execute_script_task_by_id(task_id: int):
 	async with database.LocalSession() as session:
 		task = await session.get(ScriptTask, task_id)
-		await task.script.execute()
+	await task.script.execute()
 
 class ScriptTaskOptions(BaseModel):
 	script_id: int
@@ -134,11 +133,10 @@ async def create_task(options: ScriptTaskOptions) -> ScriptTaskInfo:
 	)
 	task.tags = options.tags
 
-	async with database.LocalSession() as session:
-		async with session.begin():
-			script = await session.get(Script, script_id)
-			if not script: raise RuntimeError('Script not found')
-			session.add(task)
+	async with database.LocalSession() as session, session.begin():
+		script = await session.get(Script, script_id)
+		if not script: raise RuntimeError('Script not found')
+		session.add(task)
 	
 	task_id = task.id
 	task_info = ScriptTaskInfo(
