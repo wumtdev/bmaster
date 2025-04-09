@@ -114,7 +114,7 @@
 			}
 
 			function connect() {
-				ws = new WebSocket("ws://localhost:8765/listen");
+				ws = new WebSocket("ws://localhost:8765/api/listen");
 				ws.binaryType = "arraybuffer";
 				ws.onopen = wsOpen;
 				ws.onerror = wsError;
@@ -196,7 +196,7 @@
 			}
 
 			async function start() {
-				ws = new WebSocket("ws://localhost:8000/queries/stream");
+				ws = new WebSocket("ws://localhost:8000/api/queries/stream");
 				ws.binaryType = "arraybuffer";
 				ws.onopen = wsOpen;
 				ws.onerror = wsError;

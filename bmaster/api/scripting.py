@@ -6,6 +6,7 @@ from bmaster import scripting
 from bmaster.server import app
 from bmaster.database import LocalSession
 from bmaster.scripting import BaseScript, Script, ScriptData, ScriptTask, ScriptTaskOptions, ScriptTaskInfo, ScriptInfo
+from bmaster.api import api
 
 
 class TaskNotFound(HTTPException):
@@ -21,7 +22,7 @@ class ScriptOptions(BaseModel):
 	script: BaseScript
 
 
-@app.get('/scripting/tasks/{task_id}')
+@api.get('/scripting/tasks/{task_id}', tags=['scripting'])
 async def get_task(task_id: int) -> ScriptTaskInfo:
 	async with LocalSession() as session:
 		task = await session.get(ScriptTask, task_id)
@@ -29,20 +30,19 @@ async def get_task(task_id: int) -> ScriptTaskInfo:
 	
 	return task.get_info()
 
-@app.post('/scripting/tasks')
+@api.post('/scripting/tasks', tags=['scripting'])
 async def create_task(options: ScriptTaskOptions) -> ScriptTaskInfo:
 	return await scripting.create_task(options)
 
-@app.delete('/scripting/tasks/{task_id}')
+@api.delete('/scripting/tasks/{task_id}', tags=['scripting'])
 async def delete_task(task_id: int):
-	async with LocalSession() as session:
-		async with session.begin():
-			task = await session.get(ScriptTask, task_id)
-			if not task: raise TaskNotFound()
-			await session.delete(task)
+	async with LocalSession() as session, session.begin():
+		task = await session.get(ScriptTask, task_id)
+		if not task: raise TaskNotFound()
+		await session.delete(task)
 
 
-@app.get('/scripting/scripts/{script_id}')
+@api.get('/scripting/scripts/{script_id}', tags=['scripting'])
 async def get_script(script_id: int):
 	async with LocalSession() as session:
 		script = await session.get(Script, script_id)
@@ -50,7 +50,7 @@ async def get_script(script_id: int):
 
 	return script.get_info()
 
-@app.post('/scripting/scripts')
+@api.post('/scripting/scripts', tags=['scripting'])
 async def create_script(options: ScriptOptions) -> ScriptInfo:
 	script = Script(
 		name=options.name,
@@ -59,24 +59,21 @@ async def create_script(options: ScriptOptions) -> ScriptInfo:
 		)
 	)
 
-	async with LocalSession() as session:
-		async with session.begin():
-			session.add(script)
+	async with LocalSession() as session, session.begin():
+		session.add(script)
 	
 	return script.get_info()
 
-@app.delete('/scripting/scripts/{script_id}')
+@api.delete('/scripting/scripts/{script_id}', tags=['scripting'])
 async def delete_script(script_id: int):
-	async with LocalSession() as session:
-		async with session.begin():
-			script = await session.get(Script, script_id)
-			if not script: raise ScriptNotFound()
-			await session.delete(script)
+	async with LocalSession() as session, session.begin():
+		script = await session.get(Script, script_id)
+		if not script: raise ScriptNotFound()
+		await session.delete(script)
 
-@app.get('/scripting/scripts/execute/{script_id}')
+@api.get('/scripting/scripts/execute/{script_id}', tags=['scripting'])
 async def execute_script(script_id: int):
-	async with LocalSession() as session:
-		async with session.begin():
-			script = await session.get(Script, script_id)
-			if not script: raise ScriptNotFound()
-			asyncio.create_task(script.execute())
+	async with LocalSession() as session, session.begin():
+		script = await session.get(Script, script_id)
+		if not script: raise ScriptNotFound()
+		asyncio.create_task(script.execute())

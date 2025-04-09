@@ -84,7 +84,7 @@
 		}
 		
 		async function start() {
-			ws = new WebSocket("ws://localhost:8000/icoms/listen");
+			ws = new WebSocket("ws://localhost:8000/api/icoms/listen");
 			ws.binaryType = "arraybuffer";
 			ws.onopen = wsOpen;
 			ws.onerror = wsError;

@@ -4,7 +4,7 @@ from fastapi import File, Form, HTTPException, UploadFile
 from wauxio import Audio
 
 from bmaster.api.icoms import IcomNotFound
-from bmaster.server import app
+from bmaster.api import api
 import bmaster.icoms as icoms
 from bmaster.icoms.queries import AudioQuery, QueryInfo
 
@@ -16,7 +16,7 @@ class APIAudioRequest(BaseModel):
 	rate: int
 	channels: int
 
-@app.post('/queries/audio')
+@api.post('/queries/audio', tags=['queries'])
 async def play_audio(
 	request: str = Form(..., media_type='application/json'),
 	audio: UploadFile = File(...)

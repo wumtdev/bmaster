@@ -7,6 +7,7 @@ from wauxio.utils import AudioDrain
 
 from bmaster.server import app
 from bmaster import icoms
+from bmaster.api import api
 
 
 class APIListenRequest(BaseModel):
@@ -17,7 +18,7 @@ class APIListenRequest(BaseModel):
 
 
 
-@app.websocket('/icoms/listen')
+@api.websocket('/icoms/listen')
 async def listen_icom(ws: WebSocket):
 	await ws.accept()
 

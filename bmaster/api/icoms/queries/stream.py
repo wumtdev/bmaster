@@ -9,6 +9,7 @@ from bmaster.server import app
 import bmaster.icoms as icoms
 from bmaster.icoms import Icom
 from bmaster.icoms.queries import PlayOptions, Query, QueryStatus
+from bmaster.api import api
 
 
 class APIStreamRequest(BaseModel):
@@ -45,7 +46,7 @@ class APIStreamQuery(Query):
 	def stop(self):
 		super().stop()
 
-@app.websocket('/queries/stream')
+@api.websocket('/queries/stream')
 async def play_stream(ws: WebSocket):
 	await ws.accept()
 	

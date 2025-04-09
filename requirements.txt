@@ -7,4 +7,6 @@ git+https://github.com/wumtdev/wsignals.git
 aiosqlite
 SQLAlchemy
 APScheduler
+pyjwt
+passlib[bcrypt]
 Jinja2

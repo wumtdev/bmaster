@@ -4,7 +4,7 @@ from bmaster.api.icoms import IcomNotFound
 import bmaster.icoms as icoms
 from bmaster import icoms
 from bmaster.icoms.queries import SoundQuery, SoundQueryInfo
-from bmaster.server import app
+from bmaster.api import api
 
 
 class APISoundRequest(BaseModel):
@@ -13,7 +13,7 @@ class APISoundRequest(BaseModel):
 	priority: int = 0
 	force: bool = False
 
-@app.post("/queries/sound")
+@api.post("/queries/sound", tags=['queries'])
 async def play_sound(request: APISoundRequest) -> SoundQueryInfo:
 	icom = icoms.get(request.icom)
 	if not icom: raise IcomNotFound(request.icom)
