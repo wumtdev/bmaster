@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<!-- Required meta tags-->
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="author" content="Pavel" />
+		<meta name="keywords" content="Проект" />
+		<title>Расписание звонков</title>
+		<!-- shortcut icon-->
+		<link
+			rel="shortcut icon"
+			href="static/img/logo_1.png"
+			type="image/x-icon"
+		/>
+		<!-- Font awesome -->
+		<link href="static/css/font-awesome.css" rel="stylesheet" />
+		<!-- animat css-->
+		<link href="static/css/animate.css" rel="stylesheet" />
+		<!-- Bootstrap css-->
+		<link href="static/css/bootstrap.css" rel="stylesheet" />
+		<!-- Custom css-->
+		<link href="static/css/style2.css" rel="stylesheet" />
+	</head>
+	<body>
+		<div class="auth-main">
+			<div class="codex-authbox">
+				<div class="codex-brand logo-img2">
+					<a href="#"></a>
+						<img class="img-fluid" src="static/img/logo_2.png" alt="" />
+					</a>
+					<br />
+					<h2 class="logo-title">Школьный звонок</h2>
+				</div>
+				<form action="#">
+					<div class="form-group">
+						<label class="form-label">Логин</label>
+						<input
+							class="form-control"
+							type="text"
+							required
+							placeholder="Введите свой логин"
+						/>
+					</div>
+					<div class="form-group">
+						<label class="form-label" for="Password">Пароль</label>
+						<div class="input-group group-input">
+							<input
+								class="form-control showhide-password"
+								type="password"
+								id="Password"
+								placeholder="Введите свой пароль"
+								required=""
+							/>
+							<span class="input-group-text toggle-show fa fa-eye"></span>
+						</div>
+					</div>
+
+					<div class="form-group">
+						<button class="btn btn-primary" type="submit">
+							<i class="fa fa-sign-in"></i>
+							Вход
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+
+		<!-- main jquery-->
+		<script src="static/js/jquery-3.6.0.js"></script>
+
+		<!-- Feather iocns js-->
+		<script src="static/js/feather.js"></script>
+
+		<!-- Wow js-->
+		<script src="static/js/wow.min.js"></script>
+
+		<!-- Bootstrap js-->
+		<script src="static/js/bootstrap.bundle.min.js"></script>
+
+		<script>
+			//*** WOW Js ***//
+			new WOW().init();
+		</script>
+	</body>
+</html>

@@ -30,12 +30,12 @@ async def start():
 	serving = asyncio.create_task(server.serve())
 	logger.info("Uvicorn started")
 
-@app.get('/remote', response_class=HTMLResponse)
+@app.get('/remote', response_class=HTMLResponse, tags=["html"])
 async def remote_get():
 	with open('remote.html', 'r') as file:
 		return file.read()
 	
-@app.get('/listen', response_class=HTMLResponse)
+@app.get('/listen', response_class=HTMLResponse, tags=["html"])
 async def listen_get():
 	with open('listen.html', 'r') as file:
 		return file.read()

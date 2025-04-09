@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<!-- Required meta tags-->
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="author" content="Pavel" />
+		<meta name="keywords" content="Проект" />
+		<title>Звонки в школе</title>
+		<!-- shortcut icon-->
+		<link
+			rel="shortcut icon"
+			href="static/img/logo_1.png"
+			type="image/x-icon"
+		/>
+		<!-- Font awesome -->
+		<link href="static/css/font-awesome.css" rel="stylesheet" />
+		<!-- animat css-->
+		<link href="static/css/animate.css" rel="stylesheet" />
+		<!-- Bootstrap css-->
+		<link href="static/css/bootstrap.css" rel="stylesheet" />
+		<!-- Custom css-->
+		<link href="static/css/style2.css" rel="stylesheet" />
+	</head>
+	<body>
+		<!-- header start-->
+		<header class="land-header fixed">
+			<div class="container">
+				<div class="row">
+					<div class="col-12">
+						<div class="header-contain position-relative">
+							<div class="col-xxl-1 col-lg-1 col-2 wow fadeInUp">
+								<div class="codex-brand logo-img">
+									<a href="/"></a>
+										<img class="img-fluid" src="static/img/logo_2.png" alt="" />
+									</a>
+									<br />
+									<span class="logo-title">Звонок</span>
+								</div>
+							</div>
+
+							<div class="col-xxl-1 col-lg-1 col-8 wow fadeInUp">
+								<div class="bread-wrap"></div>
+								<span class="liveTime"></span>
+
+								<div class="bread-wrap"></div>
+								<em><span class="getDate"></span></em>
+							</div>
+
+							<div class="col-xxl-8 col-lg-8 col-2 wow fadeInUp">
+								<div class="d-flex align-items-center">
+									<div class="menu-block">
+										<ul class="menu-list">
+											<li class="d-xl-none">
+												<a class="close-menu" href="javascript:void(0);">
+													<div class="menu-brand">
+														<img
+															class="img-fluid"
+															src="static/img/logo_2.png"
+															alt=""
+														/>
+														<i data-feather="x"></i>
+													</div>
+												</a>
+											</li>
+											<li class="menu-item">
+												<a href="/">
+													<i data-feather="file-text"></i>
+													<b>Расписание звонков</b>
+												</a>
+											</li>
+											<li class="menu-item">
+												<a href="announcements">
+													<i data-feather="mic"></i>
+													<b>Объявления</b>
+												</a>
+											</li>
+											<li class="menu-item">
+												<a href="#">
+													<i data-feather="book-open"></i>
+													<b>Библиотека звуков</b>
+												</a>
+											</li>
+											<li class="menu-item">
+												<a href="settings">
+													<i data-feather="settings"></i>
+													<b>Настройки</b>
+												</a>
+											</li>
+											<li class="menu-item mob-menu">
+												<a href="profile">
+													<div class="user-icon"><i data-feather="user"></i></div>
+													<b>Профиль</b>
+												</a>
+											</li>
+										</ul>
+										<a class="menu-action d-xl-none" href="javascript:void(0);">
+											<i class="fa fa-bars"></i>
+										</a>
+									</div>
+								</div>
+							</div>
+
+							<li class="nav-profile">
+								<div class="media">
+									<div class="user-icon"><i data-feather="user"></i></div>
+									<div class="media-body">
+										<h6>Романова</h6>
+									</div>
+								</div>
+								<div class="menu-profile">
+									<ul>
+										<li><a href="profile">Профиль</a></li>
+										<li>
+											<a href="#">
+												<i class="fa fa-sign-out"></i>
+												Выйти
+											</a>
+										</li>
+									</ul>
+								</div>
+							</li>
+						</div>
+					</div>
+				</div>
+			</div>
+		</header>
+		<!-- header end-->
+
+		<!-- feathure start-->
+		<section class="bg-white space-py-100" id="#">
+			<div class="container">
+				<div class="row">
+					<div class=".col-xl-8 col-lg-6 col-12">
+						<div class="land-title land-title2">
+							<h2 class="wow fadeInUp" data-wow-duration="1s">
+								Библиотека звуков
+							</h2>
+						</div>
+					</div>
+
+					<div class=".col-xl-4 col-lg-6 col-12 wow fadeInUp">
+						<div class="block-as">
+							<div class="block-add">
+								<button
+									class="btn btn-add"
+									data-bs-toggle="modal"
+									data-bs-target="#uploadConfirmationModal"
+								>
+									<i data-feather="plus"></i>
+									Добавить мелодию
+								</button>
+							</div>
+							<div class="modal fade" id="uploadConfirmationModal">
+								<div class="modal-dialog">
+									<div class="modal-content">
+										<div class="modal-header">
+											<h5 class="modal-title">Загрузите файл</h5>
+											<a href="javascript:void(0);" data-bs-dismiss="modal">
+												<i class="ti-close"></i>
+											</a>
+										</div>
+										<div class="modal-body">
+											<form id ="uploadForm"action="/api/sounds" method="post" enctype="multipart/form-data">
+												<div>
+													<label for="file">Выберите файл для загрузки</label>
+													<input type="file" id="file" name="file" multiple required/>
+												</div>
+												<div>
+													<button
+														class="btn btn-primary ml-10 big"
+														type="submit"
+													>
+														Сохранить
+													</button>
+												</div>
+											</form>
+										</div>
+										<div class="modal-footer">
+											<button
+												class="btn btn-secondary"
+												type="button"
+												data-bs-dismiss="modal"
+											>
+												Закрыть
+											</button>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<div class="block-stop">
+								<button class="btn btn-stop" id="pause-button">
+									<i data-feather="volume-x"></i>
+									<span>Остановить все звуки</span>
+								</button>
+							</div>
+						</div>
+					</div>
+
+					<div class="row cdx-row justify-content-center">
+						<!-- card-body start-->
+						{% for specs in specs_list %}
+						<div class="col-lg-3 col-6 wow fadeInUp">
+							<div class="card user-card">
+								<div class="card-header">
+									<div class="user-setting">
+										<div class="action-menu">
+											<div class="action-toggle">
+												<i data-feather="more-vertical"></i>
+											</div>
+											<ul class="action-dropdown">
+												<li>
+													<button class="btn play-audio-btn" data-bs-toggle="modal" data-audio-src="{{ "/api/" + specs["path"] }}" data-bs-target="#audioModal">
+														<i data-feather="music"></i>
+														Воспроизвести
+													</button>
+												</li>
+												<li>
+													<a href="{{ "/api/sounds/" + specs["name"] }}" download>
+														<i data-feather="log-out"></i>
+														Скачать
+													</a>
+												</li>
+												<li>
+													<button class="btn delete-audio-btn" data-bs-toggle="modal" data-bs-target="#deleteConfirmationModal" data-delete-url="{{ "/api/" + specs["path"] }}">
+														<i data-feather="trash"></i>
+														Удалить
+													</button>
+												</li>
+											</ul>
+										</div>
+									</div>
+								</div>
+								<div class="card-body">
+									<div class="user-detailwrap">
+										<h3>{{ specs["name"] }}</h3>
+										<div>
+											<span>{{ specs["duration"] }} •</span>
+											<span>{{ specs["size"] }} •</span>
+											<span>{{ specs["sound_type"] }}</span>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						{% endfor %}
+						<!-- card-body end-->
+
+						<!-- Modal audio-->
+						<div class="modal fade" id="audioModal" tabindex="-1" aria-labelledby="audioModalLabel" aria-hidden="true">
+							<div class="modal-dialog">
+							<div class="modal-content">
+								<div class="modal-header">
+								<h5 class="modal-title" id="audioModalLabel">Плеер</h5>
+								<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+								</div>
+								<div class="modal-body text-center">
+								<p id="audioName">Звук.mp3</p>
+								<br>
+								<audio id="audioPlayer" controls>
+									<source id="audioSource" src="" type="audio/mpeg">
+									Your browser does not support the audio element.
+								</audio>
+								</div>
+							</div>
+							</div>
+						</div>
+
+						<!-- Modal delete-->
+						<div class="modal fade" id="deleteConfirmationModal" tabindex="-1" aria-labelledby="deleteConfirmationModalLabel" aria-hidden="true">
+							<div class="modal-dialog">
+							  <div class="modal-content">
+								<div class="modal-header">
+								  <h5 class="modal-title" id="deleteConfirmationModalLabel">Подтверждение удаления</h5>
+								  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+								</div>
+								<div class="modal-body">
+								  Вы точно хотите удалить?
+								</div>
+								<div class="modal-footer">
+								  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+								  <button type="button" class="btn btn-danger delete-sound-btn" id="confirmDeleteButton">Удалить</button>
+								</div>
+							  </div>
+							</div>
+						  </div>
+
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- Toast delete -->
+		<div class="toast-container position-fixed bottom-0 end-0 p-3">
+			<div id="defaultToast" class="toast" role="alert" aria-live="assertive" data-bs-delay="2500" aria-atomic="true">
+				<div class="toast-header">
+					<strong class="me-auto">Уведомление</strong>
+					<button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+				</div>
+				<div class="toast-body">
+					Что-то произошло!
+				</div>
+			</div>
+		</div>
+
+		<!-- feathure end-->
+		<!-- footer start-->
+		<footer class="lan-footer space-py-100">
+			<div class="container">
+				<div class="row">
+					<div class="col-lg-8 offset-lg-2">
+						<div class="support-contain">
+							<div class="codex-brand">
+								<a href="#">
+									<img
+										class="img-fluid wow fadeInUp"
+										src="static/img/logo_2.png"
+										alt="theeme-logo"
+									/>
+								</a>
+							</div>
+							<h3 class="wow fadeInLeft">BellMaster</h3>
+						</div>
+					</div>
+				</div>
+			</div>
+		</footer>
+		<!-- footer end-->
+
+		<!-- Feather iocns js-->
+		<script src="static/js/feather.js"></script>
+
+		<!-- Wow js-->
+		<script src="static/js/wow.min.js"></script>
+
+		<!-- Bootstrap js-->
+		<script src="static/js/bootstrap.bundle.min.js"></script>
+
+		<!-- main jquery-->
+		<script src="static/js/jquery-3.6.0.js"></script>
+
+		<script>
+			//*** Header Js ***//
+			$(window).scroll(function () {
+				if ($(window).scrollTop() > 100) {
+					$('header').addClass('sticky');
+				} else {
+					$('header').removeClass('sticky');
+				}
+			});
+
+			//*** Menu Js ***//
+			$(document).on('click', '.menu-action', function () {
+				$('.menu-list').toggleClass('open');
+			});
+			$(document).on('click', '.close-menu', function () {
+				$('.menu-list').removeClass('open');
+			});
+			
+			
+			document.addEventListener('mouseup', function (event) {
+				var container = document.querySelector('.menu-list');
+
+				if (!container.contains(event.target)) {
+					$('.menu-list').removeClass('open');
+				}
+			});
+
+			document.addEventListener('click', function (event) {
+				// Проверяем, кликнули ли на кнопку
+				const isToggle = event.target.closest('.action-toggle');
+				const menus = document.querySelectorAll('.action-dropdown');
+
+				// Если клик на кнопке
+				if (isToggle) {
+					const menu = isToggle.nextElementSibling;
+
+					// Закрываем все другие меню
+					menus.forEach(dropdown => {
+					if (dropdown !== menu) {
+						dropdown.classList.remove('active');
+					}
+					});
+
+					// Переключаем текущее меню
+					menu.classList.toggle('active');
+					return; // Завершаем обработку, чтобы не закрывать текущее меню
+				}
+
+				// Если клик вне кнопки и меню, закрываем все
+				menus.forEach(dropdown => {
+					dropdown.classList.remove('active');
+				});
+				});
+
+
+			//*** BACK TO TOP START ***//
+			$(window).scroll(function () {
+				if ($(window).scrollTop() > 450) {
+					$('.scroll-top').addClass('show');
+				} else {
+					$('.scroll-top').removeClass('show');
+				}
+			});
+			$(document).ready(function () {
+				$(document).on('click', '.scroll-top', function () {
+					$('html, body').animate({ scrollTop: 0 }, '450');
+				});
+			});
+			//*** LIVE TIME ***//
+			function getLiveTime(date) {
+				const timeFormat = (v) => String(v).padStart(2, '0');
+
+				const hours = timeFormat(date.getHours());
+				const minutes = timeFormat(date.getMinutes());
+				const seconds = timeFormat(date.getSeconds());
+
+				return `${hours}:${minutes}:${seconds}`;
+			}
+			$('.liveTime').text(getLiveTime(new Date()));
+			setInterval(function () {
+				$('.liveTime').text(getLiveTime(new Date()));
+			}, 1000);
+
+			//*** LIVE DATE ***//
+			function getDate(date) {
+				var d = new Date(date),
+					month = '' + (d.getMonth() + 1),
+					day = '' + d.getDate(),
+					year = d.getFullYear();
+
+				if (month.length < 2) month = '0' + month;
+				if (day.length < 2) day = '0' + day;
+				return [day, month, year].join('/');
+			}
+			$('.getDate').text(getDate(new Date()));
+
+
+			// Событие при нажатии на кнопку
+			document.querySelectorAll('.play-audio-btn').forEach(button => {
+				button.addEventListener('click', function () {
+					const selectElement = this.closest('.card').querySelector('.user-detailwrap h3');
+					const audioPlayer = document.getElementById('audioPlayer');
+					const audioName = selectElement.innerHTML;
+					const audioSource = document.getElementById('audioSource');
+					const audioNameElement = document.getElementById('audioName');
+
+					// Устанавливаем новый источник для аудиоплеера
+					audioSource.src = `/api/sounds/${audioName}`;
+					audioNameElement.innerHTML = audioName;
+					audioPlayer.load(); // Перезагружаем аудиоплеер
+					});
+			});
+
+			// Остановка аудио при закрытии модального окна
+			const audioModal = document.getElementById('audioModal');
+			audioModal.addEventListener('hidden.bs.modal', () => {
+				const audioPlayer = document.getElementById('audioPlayer');
+				audioPlayer.pause();
+				audioPlayer.currentTime = 0;
+			});
+
+			document.addEventListener("DOMContentLoaded", () => {
+				let deleteUrl = null;
+
+				// Обработчик клика на кнопке вызова модального окна
+				document.querySelectorAll(".delete-audio-btn").forEach(button => {
+					button.addEventListener("click", () => {
+						deleteUrl = button.getAttribute("data-delete-url");
+					});
+				});
+
+				// Обработчик клика на кнопке "Удалить" в модальном окне
+				document.getElementById("confirmDeleteButton").addEventListener("click", () => {
+					const toastElement = document.getElementById('defaultToast');
+					const toast = new bootstrap.Toast(toastElement);
+
+					if (deleteUrl) {
+						fetch(deleteUrl, {
+							method: "DELETE"
+						})
+						.then(response => {
+							if (response.ok) {
+								const audioName = document.querySelector('.user-detailwrap h3').innerHTML;
+
+								// Закрытие модального окна
+								const modal = bootstrap.Modal.getInstance(document.getElementById("deleteConfirmationModal"));
+								modal.hide();
+
+								toastElement.querySelector(".toast-body").innerHTML = `Звук ${audioName} успешно удален!`;
+								
+								toast.show();
+								console.log("Звук успешно удален!");
+								// Перезагрузка страницы через 3 секунды
+								setTimeout(() => location.reload(), 3000);
+							} else {
+								console.log("Ошибка при удалении.");
+								// Показать toast сообщение
+								toastElement.querySelector(".toast-body").innerHTML = "Упс! Произошла ошибка при удалении.";
+								toast.show();
+							}
+						})
+						.catch(error => {
+							console.error("Ошибка запроса:", error);
+							// Показать toast сообщение
+							toastElement.innerHTML = "Упс! Произошла ошибка:" + error;
+							toast.show();
+							console.log("Произошла ошибка при выполнении запроса.");
+						});
+					}
+				});
+			});
+
+			document.getElementById("uploadForm").addEventListener("submit", async(event) => {
+				event.preventDefault();
+
+				const fileInput = document.getElementById('file');
+				const file = fileInput.files[0];
+				const allowedExtensions = ['mp3', 'wav', 'ogg', 'aac'];
+				const fileExtension = file.name.split('.').pop().toLowerCase();
+
+				const toastElement = document.getElementById('defaultToast');
+				const modal = bootstrap.Modal.getInstance(document.getElementById("uploadConfirmationModal"));
+				const toast = new bootstrap.Toast(toastElement);
+
+				if (!file) {
+					toastElement.innerHTML = "Пожалуйста, выберите файл";
+					toast.show();
+					return;
+				}
+
+				else if (!allowedExtensions.includes(fileExtension)) {
+					modal.hide();
+					toastElement.querySelector(".toast-body").innerHTML = `Пожалуйста, выберите аудио файл с расширениями: ${allowedExtensions.join(', ')}.`;
+					toast.show();
+					return;
+				} 
+
+				const formData = new FormData();
+				formData.append("file", file);
+
+				try {
+					const response = await fetch('/api/sounds', {
+                    	method: 'POST',
+                    	body: formData,
+                	});
+					modal.hide();
+					if (!response.ok) {
+                    	toastElement.querySelector(".toast-body").innerHTML = `Ошибка сервера: ${response.status}`;
+						toast.show();
+
+                	}
+
+					const result = await response.json();
+					console.log(result);
+					toastElement.querySelector(".toast-body").innerHTML = `Звук ${result.filename} загружен!`;
+					toast.show();
+					setTimeout(() => location.reload(), 3000);
+				}
+				catch (error) {
+					modal.hide();
+					console.log(error)
+					console.error('Error uploading file:', error);
+					toastElement.querySelector(".toast-body").innerHTML = `Ой, ошибка: ${error.message}`;
+					toast.show();
+				}
+
+			});
+
+			document.getElementById('pause-button').addEventListener('click', function() {
+				fetch('/api/schedule/pause', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					}
+				})
+				.then(response => response.json())
+				.then(data => console.log(data))
+				.catch(error => console.error('Ошибка:', error));
+			});
+		</script>
+	</body>
+</html>

@@ -7,3 +7,4 @@ git+https://github.com/wumtdev/wsignals.git
 aiosqlite
 SQLAlchemy
 APScheduler
+Jinja2

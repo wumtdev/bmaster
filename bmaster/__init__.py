@@ -12,6 +12,7 @@ import bmaster.icoms.queries
 import bmaster.server
 import bmaster.scripting
 import bmaster.api
+import bmaster.frontend
 
 
 async def start():
@@ -55,6 +56,10 @@ async def start():
 	logger.info('Starting addons...')
 	await bmaster.addons.start()
 	logger.info('Addons started')
+
+	logger.info('Starting frontend...')
+	await bmaster.frontend.start()
+	logger.info('Frontend started')
 
 	# POST START
 	logger.info('Updating database models...')

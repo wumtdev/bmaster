@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<!-- Required meta tags-->
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="author" content="Pavel" />
+		<meta name="keywords" content="Проект" />
+		<title>Расписание звонков</title>
+		<!-- shortcut icon-->
+		<link
+			rel="shortcut icon"
+			href="static/img/logo_1.png"
+			type="image/x-icon"
+		/>
+		<!-- Font awesome -->
+		<link href="static/css/font-awesome.css" rel="stylesheet" />
+		<!-- animat css-->
+		<link href="static/css/animate.css" rel="stylesheet" />
+		<!-- Bootstrap css-->
+		<link href="static/css/bootstrap.css" rel="stylesheet" />
+		<!-- Custom css-->
+		<link href="static/css/style2.css" rel="stylesheet" />
+	</head>
+	<body>
+		<!-- header start-->
+		<header class="land-header fixed">
+			<div class="container">
+				<div class="row">
+					<div class="col-12">
+						<div class="header-contain position-relative">
+							<div class="col-xxl-1 col-lg-1 col-2 wow fadeInUp">
+								<div class="codex-brand logo-img">
+									<a href="#"></a>
+										<img class="img-fluid" src="static/img/logo_2.png" alt="" />
+									</a>
+									<br />
+									<span class="logo-title">Звонок</span>
+								</div>
+							</div>
+
+							<div class="col-xxl-1 col-lg-1 col-8 wow fadeInUp">
+								<div class="bread-wrap"></div>
+								<span class="liveTime"></span>
+
+								<div class="bread-wrap"></div>
+								<em><span class="getDate"></span></em>
+							</div>
+
+							<div class="col-xxl-8 col-lg-8 col-2 wow fadeInUp">
+								<div class="d-flex align-items-center">
+									<div class="menu-block">
+										<ul class="menu-list">
+											<li class="d-xl-none">
+												<a class="close-menu" href="javascript:void(0);">
+													<div class="menu-brand">
+														<img
+															class="img-fluid"
+															src="static/img/logo_2.png"
+															alt=""
+														/>
+														<i data-feather="x"></i>
+													</div>
+												</a>
+											</li>
+											<li class="menu-item">
+												<a href="#">
+													<i data-feather="file-text"></i>
+													<b>Расписание звонков</b>
+												</a>
+											</li>
+											<li class="menu-item">
+												<a href="announcements">
+													<i data-feather="mic"></i>
+													<b>Объявления</b>
+												</a>
+											</li>
+											<li class="menu-item">
+												<a href="sounds">
+													<i data-feather="book-open"></i>
+													<b>Библиотека звуков</b>
+												</a>
+											</li>
+											<li class="menu-item">
+												<a href="settings">
+													<i data-feather="settings"></i>
+													<b>Настройки</b>
+												</a>
+											</li>
+											<li class="menu-item mob-menu">
+												<a href="profile">
+													<i data-feather="smile"></i>
+													<b>Профиль</b>
+												</a>
+											</li>
+										</ul>
+										<a class="menu-action d-xl-none" href="javascript:void(0);">
+											<i class="fa fa-bars"></i>
+										</a>
+									</div>
+								</div>
+							</div>
+
+							<li class="nav-profile">
+								<div class="media">
+									<div class="user-icon"><i data-feather="user"></i></div>
+									<div class="media-body">
+										<h6>Романова</h6>
+									</div>
+								</div>
+								<div class="menu-profile">
+									<ul>
+										<li><a href="profile">Профиль</a></li>
+										<li>
+											<a href="#">
+												<i class="fa fa-sign-out"></i>
+												Выйти
+											</a>
+										</li>
+									</ul>
+								</div>
+							</li>
+						</div>
+					</div>
+				</div>
+			</div>
+		</header>
+		<!-- header end-->
+
+		<!-- feathure start-->
+		<section class="bg-white space-py-100" id="#">
+			<div class="container">
+				<div class="row">
+					<div class="col-12">
+						<button class="btn btn-info" id="save-button">Сохранить</button>
+						<div class="land-title">
+							<h2 class="wow fadeInUp" data-wow-duration="1s">
+								Расписание звонков
+							</h2>
+						</div>
+						<div class="row cdx-row justify-content-center">
+							<!-- table1 body start-->
+							<p id="messageNoItems" hidden >Здесь пока пусто...
+								Давайте добавим новый урок?
+							</p>
+							{% for lesson in schedule %}
+							<table
+								class="display dataTable cell-border call-table lesson"
+								id="basicdata-tbl"
+								style="width: 100%"
+							>
+								<tbody>
+									<tr class="lesson1">
+										<td width="12%">
+											<div class="lesson-time">
+												<h2>
+													<span>{{schedule.index(lesson)+1}}</span>
+													урок
+												</h2>
+											</div>
+										</td>
+										<td width="88%">
+											<div class="card-header">
+												<div class="user-setting">
+													<div class="action-menu">
+														<div class="action-toggle delete-button">
+															<i data-feather="x"></i>
+														</div>
+													</div>
+												</div>
+											</div>
+										</td>
+									</tr>
+									<tr class="lesson2">
+										<!--Lesson start time START-->
+										<td>
+											<div class="lesson-time start-type">
+												<form>
+													<p>Начало урока</p>
+													<p>
+														<input type="time" name="start_time" value="{{ lesson['start_time'] }}"/>
+													</p>
+												</form>
+											</div>
+										</td>
+										<!--Lesson start time END-->
+
+										<!-- Lesson call START-->
+										<td class="align-middle">
+											<!-- card 1 start-->
+
+											<div class="col-lg-12 col-12 wow fadeInUp">
+												<div
+													class="col-xl-3 col-lg-6 col-sm-6 cdx-xxl-40 cdx-xl-40 melody-card"
+												>
+													<div class="card-body">
+														<div class="form-group">
+															<label class="form-label">
+																Мелодия звонка на урок
+															</label>
+															<select
+																class="form-control"
+																name="start_sound_path"
+															>
+																{% for sound_specs in sounds_specs %}
+																<option value="{{ sound_specs['path'] }}" {% if sound_specs['path'] == lesson['start_sound_path'] %}selected{% endif %}>{{ sound_specs['name'] }}</option>
+																{% endfor %}
+															</select>
+														</div>
+													</div>
+												</div>
+
+												<div
+													class="col-xl-3 col-lg-2 col-sm-2 col-sbasicdatm-2 cdx-xxl-20 cdx-xl-20 duration-card"
+												>
+													<div class="card-body">
+													</div>
+												</div>
+
+												<div
+													class="col-xl-6 col-lg-4 col-sm-4 cdx-xxl-40 cdx-xl-40 duration-card"
+												>
+													<div class="card-body">
+														<div class="form-group">
+															<label class="form-label">Проиграть на:</label>
+															<br />
+															<div class="card-button">
+																<button
+																	class="btn btn-primary browserPlayButton"
+																>
+																	<i data-feather="volume-1"></i>
+																	Устройстве
+																</button>
+															</div>
+
+															<div class="card-button">
+																<button class="btn btn-warning externalPlayButton">
+																	<i data-feather="music"></i>
+																	Динамиках школы
+																</button>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+											<!-- card 1 end-->
+										</td>
+
+										<!--Lesson call END-->
+									</tr>
+									<tr class="lesson3">
+										<!--End time of the lesson START-->
+										<td>
+											<div class="lesson-time end-type">
+												<form>
+													<p>Конец урока</p>
+													<p>
+														<input type="time" name="end_time" value="{{ lesson['end_time'] }}">
+													</p>
+												</form>
+											</div>
+										</td>
+										<!--End time of the lesson END-->
+
+										<!-- Сall from the lesson START-->
+										<td class="align-middle">
+											<!-- card 2 start-->
+
+											<div class="col-lg-12 col-12 wow fadeInUp">
+												<div
+													class="col-xl-3 col-lg-6 col-sm-6 cdx-xxl-40 cdx-xl-40 melody-card"
+												>
+													<div class="card-body">
+														<div class="form-group">
+															<label class="form-label">
+																Мелодия звонка на перемену
+															</label>
+															<select class="form-control" name="end_sound_path">
+																{% for sound_specs in sounds_specs %}
+																<option value="{{ sound_specs['path'] }}" {% if sound_specs['path'] == lesson['end_sound_path'] %}selected{% endif %}>{{ sound_specs['name'] }}</option>
+																{% endfor %}
+															</select>
+														</div>
+													</div>
+												</div>
+
+												<div
+													class="col-xl-3 col-lg-2 col-sm-2 cdx-xxl-20 cdx-xl-20 duration-card"
+												>
+													<div class="card-body">
+													</div>
+												</div>
+
+												<div
+													class="col-xl-6 col-lg-4 col-sm-4 cdx-xxl-40 cdx-xl-40 duration-card"
+												>
+													<div class="card-body">
+														<div class="form-group">
+															<label class="form-label">Проиграть на:</label>
+															<br />
+															<div class="card-button">
+																<button
+																	class="btn btn-primary browserPlayButton"
+																>
+																	<i data-feather="volume-1"></i>
+																	Устройстве
+																</button>
+															</div>
+
+															<div class="card-button">
+																<button class="btn btn-warning externalPlayButton">
+																	<i data-feather="music"></i>
+																	Динамиках школы
+																</button>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+											<!-- card 2 end-->
+										</td>
+										<!-- Сall from the lesson END-->
+									</tr>
+									
+									<tr class="lesson4">
+										<td colspan="2">
+											<div class="lesson-time">
+												 <div class="shift-time">
+                                                 <label for="shift" ><h2>Перемена</h2></label>
+                                                 <span class="break-min">15</span><span> мин</span>
+                                                  </div>
+											</div>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+							
+							{% endfor %}
+
+							<!-- table1 body end-->
+
+							<!-- table2 body start-->
+
+							<!-- Modal audio-->
+							<div class="modal fade" id="audioModal" tabindex="-1" aria-labelledby="audioModalLabel" aria-hidden="true">
+								<div class="modal-dialog">
+								<div class="modal-content">
+									<div class="modal-header">
+									<h5 class="modal-title" id="audioModalLabel">Плеер</h5>
+									<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+									</div>
+									<div class="modal-body text-center">
+									<p id="audioName">Звук.mp3</p>
+									<br>
+									<audio id="audioPlayer" controls>
+										<source id="audioSource" src="" type="audio/mpeg">
+										Your browser does not support the audio element.
+									</audio>
+									</div>
+								</div>
+								</div>
+							</div>
+
+
+							<div class="land-title">
+								<button class="btn btn-info">
+									<i data-feather="plus"></i>
+									Добавить урок
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+
+		<div class="toast-container position-fixed bottom-0 end-0 p-3">
+			<div id="saveToast" class="toast" role="alert" aria-live="assertive" data-bs-delay="2500" aria-atomic="true">
+				<div class="toast-header">
+					<strong class="me-auto">Уведомление</strong>
+					<small>Только что</small>
+					<button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+				</div>
+				<div class="toast-body">
+					Данные успешно сохранены!
+				</div>
+			</div>
+		</div>
+
+		
+		<footer class="lan-footer space-py-100">
+			<div class="container">
+				<div class="row">
+					<div class="col-lg-8 offset-lg-2">
+						<div class="support-contain">
+							<div class="codex-brand">
+								<a href="#">
+									<img
+										class="img-fluid wow fadeInUp"
+										src="static/img/logo_2.png"
+										alt="theeme-logo"
+									/>
+								</a>
+							</div>
+							<h3 class="wow fadeInLeft">BellMaster</h3>
+							<h6 class="wow fadeInLeft">2024-20xx</h6>
+						</div>
+					</div>
+				</div>
+			</div>
+		</footer>
+		<!-- footer end-->
+
+		<!-- main jquery-->
+		<script src="static/js/jquery-3.6.0.js"></script>
+
+		<!-- Feather iocns js-->
+		<script src="static/js/feather.js"></script>
+
+		<!-- Wow js-->
+		<!-- <script src="static/js/wow.min.js"></script> -->
+
+		<!-- Bootstrap js-->
+		<script src="static/js/bootstrap.bundle.min.js"></script>
+
+		<script>
+			//========== Global Helpers ==========//
+			const $window = $(window);
+			const $document = $(document);
+			const content = document.querySelector(".cdx-row");
+			const toast = new bootstrap.Toast(document.getElementById('saveToast'));
+			const toastElement = document.getElementById('saveToast');
+			let observer;
+		
+			//========== Header Behavior ==========//
+			$window.scroll(function() {
+				$('header').toggleClass('sticky', $window.scrollTop() > 100);
+			});
+		
+			//========== Menu Handling ==========//
+			$document.on('click', '.menu-action', () => $('.menu-list').toggleClass('open'));
+			$document.on('click', '.close-menu', () => $('.menu-list').removeClass('open'));
+		
+			document.addEventListener('mouseup', (e) => {
+				if (!document.querySelector('.menu-list').contains(e.target)) {
+					$('.menu-list').removeClass('open');
+				}
+			});
+		
+			//========== Back to Top ==========//
+			$window.scroll(function() {
+				$('.scroll-top').toggleClass('show', $window.scrollTop() > 450);
+			});
+		
+			$document.on('click', '.scroll-top', () => {
+				$('html, body').animate({scrollTop: 0}, 450);
+			});
+		
+			//========== Time Display ==========//
+			function updateTime() {
+				const now = new Date();
+				// Live Time
+				const liveTime = now.toTimeString().substring(0, 8);
+				$('.liveTime').text(liveTime);
+
+			}
+			setInterval(updateTime, 1000);
+			updateTime();
+		
+			//========== Dynamic Elements Handling ==========//
+			function initializeElements() {
+				// Delete buttons
+				$document.off('click', '.delete-button').on('click', '.delete-button', function() {
+					$(this).closest('.dataTable').remove();
+					checkItems();
+				});
+		
+				// Play buttons
+				$document.off('click', '.browserPlayButton').on('click', '.browserPlayButton', handleBrowserPlay);
+				$document.off('click', '.externalPlayButton').on('click', '.externalPlayButton', handleExternalPlay);
+			}
+		
+			//========== Audio Handling ==========//
+			function handleBrowserPlay() {
+				const select = $(this).closest('tr').find('select')[0];
+				const audioPlayer = document.getElementById('audioPlayer');
+				const audioName = select.options[select.selectedIndex].text
+				const audioNameElement = document.getElementById('audioName');
+		
+				audioSource.src = `/api/sounds/${audioName}`;
+				audioNameElement.textContent = audioName;
+				audioPlayer.load();
+				
+				const modal = new bootstrap.Modal('#audioModal');
+				modal.show();
+				
+				// Fix for modal backdrop
+				$('#audioModal').on('hidden.bs.modal', () => {
+					$('body').removeClass('modal-open');
+					$('.modal-backdrop').remove();
+				});
+			}
+		
+			function handleExternalPlay() {
+				const select = $(this).closest('tr').find('select')[0];
+				fetch("/api/schedule/add_event", {
+					method: 'POST',
+					headers: {'Content-Type': 'application/json'},
+					body: JSON.stringify({
+						eventType: "SOUND_TEST",
+						path: select.value
+					})
+				}).then(response => {
+					if (response.ok) {
+						toast.show();
+						setTimeout(location.reload, 2000);
+					} else {
+						throw new Error('Failed to save data');
+					}
+				}).catch(error => {
+					console.error(error);
+					toastElement.querySelector(".toast-body").textContent = 'Произошла ошибка. Попробуйте еще раз.';
+				});
+			}
+		
+			//========== Schedule Validation ==========//
+			function validateSchedule(lessons) {
+				// Time validation
+				for (const [index, lesson] of lessons.entries()) {
+					if (lesson.startTime >= lesson.endTime) {
+						return `Урок ${index + 1}: Некорректное время`;
+					}
+				}
+		
+				// Overlap validation
+				for (let i = 0; i < lessons.length; i++) {
+					for (let j = i + 1; j < lessons.length; j++) {
+						if (lessons[i].startTime < lessons[j].endTime && 
+							lessons[i].endTime > lessons[j].startTime) {
+							return `Уроки ${i + 1} и ${j + 1} пересекаются`;
+						}
+					}
+				}
+				return null;
+			}
+		
+			//========== Save Handling ==========//
+			$document.on('click', '#save-button', function() {
+				const lessons = [];
+				const scheduleData = [];
+		
+				$('.lesson').each(function() {
+					const $lesson = $(this);
+					const startTime = $lesson.find('[name="start_time"]').val();
+					const endTime = $lesson.find('[name="end_time"]').val();
+					const startSound = $lesson.find('[name="start_sound_path"]').val();
+					const endSound = $lesson.find('[name="end_sound_path"]').val();
+		
+					lessons.push({startTime, endTime});
+					scheduleData.push(
+						{time: startTime, filePath: startSound, type: "start"},
+						{time: endTime, filePath: endSound, type: "end"}
+					);
+				});
+		
+				const validationError = validateSchedule(lessons);
+				if (validationError) {
+					toastElement.querySelector(".toast-body").textContent = validationError;
+					toast.show();
+					return;
+				}
+		
+				fetch('/api/schedule_upload', {
+					method: 'POST',
+					headers: {'Content-Type': 'application/json'},
+					body: JSON.stringify({schedule: scheduleData})
+				}).then(response => {
+						if (response.ok) {
+							toast.show();
+							// перезегрузить страницу через 2 секунды
+							setTimeout(() => {
+								location.reload();
+							}, 2000);
+						} else {
+							throw new Error('Failed to save data');
+						}
+						})
+					.catch(error => {
+						console.error(error);
+						toast.querySelector(".toast-body").innerText = 'Произошла ошибка. Попробуйте еще раз.';
+					});
+				});
+		
+			//========== New Lesson Template ==========//
+			$document.on('click', '.land-title button', function() {
+				const newLessonHTML = `
+					<table class="display dataTable cell-border call-table lesson" id="basicdata-tbl" style="width: 100%">
+						<tbody>
+							<tr class="lesson1">
+								<td width="12%">
+									<div class="lesson-time">
+										<h2><span>Новый</span> урок</h2>
+									</div>
+								</td>
+								<td width="88%">
+									<div class="card-header">
+										<div class="user-setting">
+											<div class="action-menu">
+												<div class="action-toggle delete-button">
+													<i data-feather="x"></i>
+												</div>
+											</div>
+										</div>
+									</div>
+								</td>
+							</tr>
+							<tr class="lesson2">
+								<td>
+									<div class="lesson-time start-type">
+										<form>
+											<p>Начало урока</p>
+											<p><input type="time" name="start_time" value=""/></p>
+										</form>
+									</div>
+								</td>
+								<td class="align-middle">
+									<div class="col-lg-12 col-12 wow fadeInUp">
+										<div class="col-xl-3 col-lg-6 col-sm-6 cdx-xxl-40 cdx-xl-40 melody-card">
+											<div class="card-body">
+												<div class="form-group">
+													<label class="form-label">Мелодия звонка на урок</label>
+													<select class="form-control" name="start_sound_path">
+														{% for sound_specs in sounds_specs %}
+														<option value="{{ sound_specs['path'] }}">{{ sound_specs['name'] }}</option>
+														{% endfor %}
+													</select>
+												</div>
+											</div>
+										</div>
+										<div class="col-xl-3 col-lg-2 col-sm-2 cdx-xxl-20 cdx-xl-20 duration-card">
+											<div class="card-body">
+											</div>
+										</div>
+										<div class="col-xl-6 col-lg-4 col-sm-4 cdx-xxl-40 cdx-xl-40 duration-card">
+											<div class="card-body">
+												<div class="form-group">
+													<label class="form-label">Проиграть на:</label>
+													<br />
+													<div class="card-button">
+														<button class="btn btn-primary browserPlayButton">
+															<i data-feather="volume-1"></i>Устройстве
+														</button>
+													</div>
+													<div class="card-button">
+														<button class="btn btn-warning externalPlayButton">
+															<i data-feather="music"></i>Динамиках школы
+														</button>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+								</td>
+							</tr>
+							<tr class="lesson3">
+								<td>
+									<div class="lesson-time end-type">
+										<form>
+											<p>Конец урока</p>
+											<p><input type="time" name="end_time" value=""></p>
+										</form>
+									</div>
+								</td>
+								<td class="align-middle">
+									<div class="col-lg-12 col-12 wow fadeInUp">
+										<div class="col-xl-3 col-lg-6 col-sm-6 cdx-xxl-40 cdx-xl-40 melody-card">
+											<div class="card-body">
+												<div class="form-group">
+													<label class="form-label">Мелодия звонка на перемену</label>
+													<select class="form-control" name="end_sound_path">
+														{% for sound_specs in sounds_specs %}
+														<option value="{{ sound_specs['path'] }}">{{ sound_specs['name'] }}</option>
+														{% endfor %}
+													</select>
+												</div>
+											</div>
+										</div>
+										<div class="col-xl-3 col-lg-2 col-sm-2 cdx-xxl-20 cdx-xl-20 duration-card">
+											<div class="card-body">
+											</div>
+										</div>
+										<div class="col-xl-6 col-lg-4 col-sm-4 cdx-xxl-40 cdx-xl-40 duration-card">
+											<div class="card-body">
+												<div class="form-group">
+													<label class="form-label">Проиграть на:</label>
+													<br />
+													<div class="card-button">
+														<button class="btn btn-primary browserPlayButton">
+															<i data-feather="volume-1"></i>Устройстве
+														</button>
+													</div>
+													<div class="card-button">
+														<button class="btn btn-warning externalPlayButton">
+															<i data-feather="music"></i>Динамиках школы
+														</button>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+								</td>
+							</tr>
+
+							<tr class="lesson4">
+										<td colspan="2">
+											<div class="lesson-time">
+												 <div class="shift-time">
+                                                 <label for="shift" ><h2>Перемена</h2></label>
+                                                 <span class="break-min">15</span><span> мин</span>
+                                                  </div>
+											</div>
+										</td>
+									</tr>
+						</tbody>
+					</table>
+				`;
+				
+				document.querySelector('.cdx-row').lastElementChild.insertAdjacentHTML('beforebegin', newLessonHTML);
+				feather.replace();
+				initializeElements();
+				checkItems(); // Force check after adding
+			});
+		
+			//========== Items Check ==========//
+			function checkItems() {
+				const hasItems = $('.dataTable').length > 0;
+				const message = document.getElementById("messageNoItems");
+				hasItems ? message.setAttribute('hidden', '') : message.removeAttribute('hidden');
+			}
+		
+			//========== Break Time Calculation ==========//
+			function calculateBreaks() {
+				const lessons = $('.lesson').toArray();
+				
+				lessons.forEach((currentLesson, index) => {
+					// Ищем и удаляем последнюю перемену
+					const $breakElement = $(currentLesson).find('.lesson4');
+					const isLastLesson = index === lessons.length - 1;
+
+					// Удаляем блок перемены для последнего урока
+					if(isLastLesson) {
+						$breakElement.remove();
+						return;
+					}
+
+					// Восстанавливаем блок если был удален
+					if(!$breakElement.length) {
+						$(currentLesson).find('tbody').append(`
+							<tr class="lesson4">
+								<td colspan="2">
+									<div class="lesson-time">
+										<div class="shift-time">
+											<label for="shift"><h2>Перемена</h2></label>
+											<span class="break-min">15</span><span> мин</span>
+										</div>
+									</div>
+								</td>
+							</tr>
+						`);
+					}
+					// Для последнего урока не считаем перемену
+					if(index === lessons.length - 1) {
+						$(currentLesson).find('.break-min').text('0');
+						return;
+					}
+
+					// Получаем время окончания текущего урока
+					const endTime = $(currentLesson).find('[name="end_time"]').val();
+					// Получаем время начала следующего урока
+					const nextStartTime = $(lessons[index + 1]).find('[name="start_time"]').val();
+
+					if(!endTime || !nextStartTime) return;
+
+					// Конвертируем время в минуты
+					const parseTime = time => {
+						const [hours, minutes] = time.split(':').map(Number);
+						return hours * 60 + minutes;
+					};
+
+					// Вычисляем длительность перемены
+					const breakDuration = parseTime(nextStartTime) - parseTime(endTime);
+					
+					// Обновляем отображение
+					$(currentLesson).find('.break-min').text(breakDuration > 0 ? breakDuration : '0');
+				});
+			}
+
+			//========== Initialization ==========//
+			$(function() {
+				initializeElements();
+				initObserver();
+				checkItems();
+				calculateBreaks();
+			});
+
+			//========== Mutation Observer ==========//
+			function initObserver() {
+				observer = new MutationObserver((mutations) => {
+					checkItems();
+					calculateBreaks();
+				});
+
+				observer.observe(content, {
+					childList: true,
+					subtree: true,
+					attributes: false
+				});
+			}
+
+			// Добавляем обработчики изменения времени
+			$(document).on('change', '[name="start_time"], [name="end_time"]', function() {
+				setTimeout(calculateBreaks, 50); // Небольшая задержка для корректного обновления
+			});
+			
+			//========== Mutation Observer ==========//
+			function initObserver() {
+				observer = new MutationObserver((mutations) => {
+					mutations.forEach(() => checkItems());
+				});
+		
+				observer.observe(content, {
+					childList: true,
+					subtree: true,
+					attributes: false
+				});
+			}
+		
+			//========== Initialization ==========//
+			$(function() {
+				initializeElements();
+				initObserver();
+				checkItems();
+			});
+		</script>
+	</body>
+</html>
