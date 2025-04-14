@@ -1,24 +1,12 @@
-from pydantic import BaseModel, ModelWrapValidatorHandler, Field, model_validator
+from pydantic import BaseModel, ModelWrapValidatorHandler, Field, ValidationError, model_validator
 from typing import Coroutine, Literal, Dict, Self, Type, Any
 
 from bmaster import icoms
 from bmaster.icoms.queries import SoundQuery
 
 
-# Command registry
-COMMAND_REGISTRY: Dict[str, Type['ScriptCommand']] = dict()
-
-def script_command(cls: Type['ScriptCommand']) -> Type['ScriptCommand']:
-	"""Decorator to register command types"""
-	type_field = cls.model_fields.get('type', None)
-	if not type_field:
-		raise ValueError("Command must have 'type' field")
-	COMMAND_REGISTRY[type_field.default] = cls  # type: ignore
-	return cls
-
+command_registry: dict[str, Type['ScriptCommand']] = dict()
 class ScriptCommand(BaseModel):
-	"""Base command model"""
-
 	type: str = Field(..., description="Command type discriminator")
 
 	def execute(self) -> Coroutine[Any, Any, None]:
@@ -26,17 +14,22 @@ class ScriptCommand(BaseModel):
 	
 	@model_validator(mode='wrap')
 	@classmethod
-	def validate_command_type(cls, data: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
-		cmd = handler(data)
-		if cls is not ScriptCommand: return cmd
-		cmd_type = cmd.type
-		cmd_class = COMMAND_REGISTRY.get(cmd_type, None)
-		if not cmd_class:
-			raise ValueError(f"Unknown command type: {cmd_type}")
-		
-		return cmd_class.model_validate(data)
+	def validate_type(cls, data: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
+		ent = handler(data)
+		if cls is not ScriptCommand: return ent
+		ent_type = ent.type
+		ent_class = command_registry.get(ent_type, None)
+		if not ent_class: raise ValidationError(f'Unknown entity type: {ent_type}')
+		return ent_class.model_validate(data)
+	
+	@staticmethod
+	def register(cls: Type[Self]) -> Type[Self]:
+		type_field = cls.model_fields.get('type', None)
+		if not type_field: raise ValueError('Missing type field')
+		command_registry[type_field.default] = cls  # type: ignore
+		return cls
 
-@script_command
+@ScriptCommand.register
 class PlaySoundCommand(ScriptCommand):
 	type: Literal['queries.sound'] = 'queries.sound'
 	sound_name: str
@@ -54,7 +47,7 @@ class PlaySoundCommand(ScriptCommand):
 			force=self.force
 		)
 
-@script_command
+@ScriptCommand.register
 class LogCommand(ScriptCommand):
 	type: Literal['scripting.log'] = 'scripting.log'
 	message: str

@@ -3,6 +3,7 @@ from asyncio import Task
 from typing import Optional
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 from bmaster import logs
@@ -13,6 +14,19 @@ logger = logs.logger.getChild('server')
 app = FastAPI(
 	title="bmaster"
 )
+
+origins = [
+	"http://localhost:5173",
+]
+
+app.add_middleware(
+	CORSMiddleware,
+	allow_origins=origins,
+	allow_credentials=True,
+	allow_methods=["*"],
+	allow_headers=["*"],
+)
+
 
 serving: Optional[Task] = None
 

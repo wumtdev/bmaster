@@ -26,7 +26,7 @@ class PlayOptions:
 
 class QueryInfo(BaseModel):
 	id: uuid.UUID
-	name: Optional[str]
+	type: Optional[str]
 	description: Optional[str]
 	icom: str
 	priority: int
@@ -37,7 +37,7 @@ class QueryInfo(BaseModel):
 # abstract/virtual
 class Query:
 	id: uuid.UUID
-	name: Optional[str] = None
+	type: Optional[str] = None
 	description: Optional[str] = None
 	icom: "Icom"
 	duration: Optional[float] = None
@@ -99,9 +99,9 @@ class Query:
 	def get_info(self) -> QueryInfo:
 		return QueryInfo(
 			id=self.id,
-			name=self.name,
+			type=self.type,
 			description=self.description,
-			icom=self.icom.name,
+			icom=self.icom.id,
 			priority=self.priority,
 			force=self.force,
 			duration=self.duration,
@@ -113,7 +113,7 @@ class SoundQueryInfo(QueryInfo):
 	sound_name: str
 
 class SoundQuery(Query):
-	name = 'sounds.sound'
+	type = 'sounds.sound'
 	sound_name: str
 	priority: int
 	force: bool
@@ -143,12 +143,12 @@ class SoundQuery(Query):
 	def get_info(self):
 		data = super().get_info()
 		return SoundQueryInfo(
-			**data.dict(),
+			**data.model_dump(),
 			sound_name=self.sound_name
 		)
 
 class AudioQuery(Query):
-	name = 'audio'
+	type = 'audio'
 	audio: Audio
 	priority: int
 	force: bool
@@ -176,7 +176,7 @@ class AudioQuery(Query):
 		super().stop()
 
 class StreamQuery(Query):
-	name = 'stream'
+	type = 'stream'
 	stream: IAudioReader
 	priority: int
 	force: bool

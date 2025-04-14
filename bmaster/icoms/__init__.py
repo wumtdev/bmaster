@@ -1,6 +1,6 @@
 import asyncio
 from typing import Mapping, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, SerializeAsAny
 from wauxio.output import AudioOutput
 from wauxio.mixer import AudioMixer
 from wauxio.utils import AudioStack
@@ -8,34 +8,38 @@ from wauxio.utils import AudioStack
 from bmaster import direct, logs
 from bmaster.utils import aio
 from .queries import PlayOptions, Query, QueryInfo
+from bmaster import configs
 
 
 logger = logs.logger.getChild('icoms')
 
 
 class IcomInfo(BaseModel):
-	name: str
-	playing: Optional[QueryInfo]
-	queue: list[QueryInfo]
+	id: str
+	name: Optional[str] = None
+	playing: Optional[SerializeAsAny[QueryInfo]]
+	queue: list[SerializeAsAny[QueryInfo]]
 	paused: bool
 
 
 class Icom:
-	name: str
-	queue: list[Query] = list()
+	id: str
+	name: Optional[str] = None
+	queue: list[Query]
 	playing: Optional[Query] = None
 	mixer: AudioMixer
 	paused: bool = False
 	output: AudioOutput
 
-	def __init__(self, name: str):
-		self.name = name
+	def __init__(self, icom_id: str):
+		self.id = icom_id
 		mixer = AudioMixer()
 		output = AudioOutput(
 			rate=48000,
 			channels=2
 		)
 		output.connect(mixer.mix)
+		self.queue = list()
 		self.mixer = mixer
 		self.output = output
 	
@@ -111,32 +115,46 @@ class Icom:
 	def get_info(self) -> IcomInfo:
 		playing = self.playing
 		return IcomInfo(
-			name=self.name,
+			id=self.id,
 			playing=playing.get_info() if self.playing else None,
-			queue=list(map(Query.get_info, self.queue)),
-			paused=self.paused
+			queue=list(map(lambda q: q.get_info(), self.queue)),
+			paused=self.paused,
+			name=self.name
 		)
 
 
 _icoms_map: Mapping[str, Icom] = dict()
 
-def get(name: str) -> Optional[Icom]:
-	return _icoms_map.get(name, None)
+def get(icom_id: str) -> Optional[Icom]:
+	return _icoms_map.get(icom_id, None)
+
+
+class IcomConfig(BaseModel):
+	name: Optional[str] = None
+	direct: bool = False
+
+class IcomsConfig(BaseModel):
+	icoms: dict[str, IcomConfig]
+
+config: Optional[IcomsConfig] = None
 
 async def start():
-	logger.info('Starting main icom...')
-	main_icom = Icom('main')
-	_icoms_map['main'] = main_icom
-	asyncio.create_task(main_icom.run())
+	global config
 
-	rate = main_icom.output.rate
-	channels = main_icom.output.channels
-	stack = AudioStack(
-		rate=rate,
-		channels=channels,
-		samples=int(rate * direct.DELAY * 2)
-	)
-	main_icom.output.listen(stack.push)
-	direct.output_mixer.add(stack.pull)
-
-	logger.info('Main icom started')
+	config = IcomsConfig.model_validate(configs.main_config['icoms'])
+	
+	for icom_id, icom_config in config.icoms.items():
+		icom = Icom(icom_id)
+		icom.name = icom_config.name
+		if icom_config.direct:
+			rate = icom.output.rate
+			channels = icom.output.channels
+			stack = AudioStack(
+				rate=rate,
+				channels=channels,
+				samples=int(rate * direct.DELAY * 2)
+			)
+			icom.output.listen(stack.push)
+			direct.output_mixer.add(stack.pull)
+		_icoms_map[icom_id] = icom
+		asyncio.create_task(icom.run())
