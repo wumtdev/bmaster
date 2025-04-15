@@ -281,4 +281,27 @@ async def get_roles() -> list[RoleInfo]:
 		roles = (await session.execute(
 			select(Role)
 		)).scalars().all()
-	return map(Role.get_info, roles)
+	return map(lambda r: r.get_info(), roles)
+
+@api.get('/auth/roles/{role_id}')
+async def get_role(role_id: int) -> RoleInfo:
+	from bmaster.database import LocalSession
+	async with LocalSession() as session:
+		role = await session.get(Role, role_id)
+		if not role: raise HTTPException(status.HTTP_404_NOT_FOUND, 'Role not found')
+	return role.get_info()
+
+class RoleCreateRequest(BaseModel):
+	name: str
+	permissions: set[str] = Field(default_factory=lambda: set())
+
+@api.post('/auth/roles')
+async def get_role(req: RoleCreateRequest) -> RoleInfo:
+	from bmaster.database import LocalSession
+	role = Role(
+		name=req.name,
+		permissions=req.permissions
+	)
+	async with LocalSession() as session, session.begin():
+		session.add(role)
+	return role.get_info()
