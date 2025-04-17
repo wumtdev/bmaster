@@ -8,7 +8,6 @@ import bmaster.direct
 import bmaster.sounds
 import bmaster.icoms
 import bmaster.scheduling
-import bmaster.icoms.queries
 import bmaster.server
 import bmaster.scripting
 import bmaster.api

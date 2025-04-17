@@ -130,7 +130,12 @@ class SoundQuery(Query):
 		super().play(options)
 		mixer = options.mixer
 
-		player = AudioReader(sounds.storage.get(self.sound_name))
+		audio = sounds.storage.get(self.sound_name)
+		if not audio:
+			self.finish()
+			return
+
+		player = AudioReader(audio)
 		self.player = player
 		player.end.connect(self.finish)
 		mixer.add(player)
