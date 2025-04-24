@@ -2,6 +2,7 @@ import asyncio
 from typing import Optional
 from fastapi import HTTPException, status
 from pydantic import BaseModel, Field, SerializeAsAny
+from sqlalchemy import select
 
 from bmaster.scheduling import JobTrigger
 from bmaster.scripting import BaseScript, Script, ScriptData, ScriptTask, ScriptTaskInfo, ScriptInfo
@@ -15,6 +16,13 @@ async def get_script(script_id: int) -> ScriptInfo:
 		script = await session.get(Script, script_id)
 	if not script: raise HTTPException(status.HTTP_404_NOT_FOUND, 'Task not found')
 	return script.get_info()
+
+@api.get('/scripting/scripts', tags=['scripting'])
+async def get_scripts() -> list[ScriptInfo]:
+	from bmaster.database import LocalSession
+	async with LocalSession() as session:
+		scripts = (await session.execute(select(Script))).scalars()
+	return map(lambda s: s.get_info(), scripts)
 
 class ScriptCreateRequest(BaseModel):
 	name: str
@@ -76,6 +84,13 @@ async def get_task(task_id: int) -> ScriptTaskInfo:
 	if not task: raise HTTPException(status.HTTP_404_NOT_FOUND, 'Task not found')
 	
 	return task.get_info()
+
+@api.get('/scripting/tasks', tags=['scripting'])
+async def get_tasks() -> list[ScriptTaskInfo]:
+	from bmaster.database import LocalSession
+	async with LocalSession() as session:
+		scripts = (await session.execute(select(ScriptTask))).scalars()
+	return map(lambda s: s.get_info(), scripts)
 
 class ScriptTaskCreateRequest(BaseModel):
 	script_id: int

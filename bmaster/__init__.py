@@ -12,6 +12,7 @@ import bmaster.server
 import bmaster.scripting
 import bmaster.api
 import bmaster.frontend
+import bmaster.lite
 
 
 async def start():
@@ -60,6 +61,10 @@ async def start():
 	await bmaster.frontend.start()
 	logger.info('Frontend started')
 
+	logger.info('Starting lite...')
+	await bmaster.lite.start()
+	logger.info('Lite started')
+
 	# POST START
 	logger.info('Updating database models...')
 	await bmaster.database.update_models()
@@ -72,4 +77,5 @@ async def stop():
 	logger.info('Stopping direct...')
 	await bmaster.direct.stop()
 	logger.info('Direct stopped')
+
 	logger.info("Stopped")

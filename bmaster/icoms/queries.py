@@ -12,6 +12,7 @@ from bmaster import sounds
 
 if TYPE_CHECKING:
 	from bmaster.icoms import Icom
+	from bmaster.api.auth.users import UserInfo
 
 
 class QueryStatus(Enum):
@@ -24,6 +25,30 @@ class QueryStatus(Enum):
 class PlayOptions:
 	mixer: AudioMixer
 
+class QueryAuthor(BaseModel):
+	type: Optional[str] = None
+	name: str
+	label: Optional[str] = None
+
+	# @staticmethod
+	# def from_user(user: UserInfo):
+	# 	match user.type:
+	# 		case 'account':
+	# 			return QueryAuthor(
+	# 				type='account',
+	# 				name=user.name,
+	# 				label=f'#{user.id}'
+	# 			)
+	# 		case 'root':
+	# 			return QueryAuthor(
+	# 				type='root',
+	# 				name='Администратор'
+	# 			)
+	# 	return QueryAuthor(
+	# 		type='uknown',
+	# 		label='Неизвестный'
+	# 	)
+
 class QueryInfo(BaseModel):
 	id: uuid.UUID
 	type: Optional[str]
@@ -33,6 +58,7 @@ class QueryInfo(BaseModel):
 	force: bool
 	duration: Optional[float]
 	status: QueryStatus
+	author: Optional[QueryAuthor] = None
 
 # abstract/virtual
 class Query:
@@ -44,6 +70,7 @@ class Query:
 	priority: int = 0
 	force: bool = False
 	status: QueryStatus = QueryStatus.WAITING
+	author: Optional[QueryAuthor] = None
 
 	on_play: Signal
 	on_stop: Signal
@@ -105,7 +132,8 @@ class Query:
 			priority=self.priority,
 			force=self.force,
 			duration=self.duration,
-			status=self.status
+			status=self.status,
+			author=self.author
 		)
 
 
@@ -119,11 +147,12 @@ class SoundQuery(Query):
 	force: bool
 	player: Optional[AudioReader] = None
 
-	def __init__(self, icom: "Icom", sound_name: str, priority: int = 0, force: bool = False):
+	def __init__(self, icom: "Icom", sound_name: str, priority: int = 0, force: bool = False, author: Optional[QueryAuthor] = None):
 		self.description = f"Playing sound: '{sound_name}'"
 		self.sound_name = sound_name
 		self.priority = priority
 		self.force = force
+		self.author = author
 		super().__init__(icom)
 
 	def play(self, options: PlayOptions):
@@ -159,11 +188,12 @@ class AudioQuery(Query):
 	force: bool
 	player: Optional[AudioReader] = None
 
-	def __init__(self, icom: "Icom", audio: Audio, priority: int = 0, force: bool = False):
+	def __init__(self, icom: "Icom", audio: Audio, priority: int = 0, force: bool = False, author: Optional[QueryAuthor] = None):
 		self.description = "Playing plain audio"
 		self.audio = audio
 		self.priority = priority
 		self.force = force
+		self.author = author
 		super().__init__(icom)
 
 	def play(self, options: PlayOptions):
@@ -186,11 +216,12 @@ class StreamQuery(Query):
 	priority: int
 	force: bool
 
-	def __init__(self, icom: "Icom", stream: IAudioReader, priority: int = 0, force: bool = False):
+	def __init__(self, icom: "Icom", stream: IAudioReader, priority: int = 0, force: bool = False, author: Optional[QueryAuthor] = None):
 		self.description = "Playing plain audio stream"
 		self.stream = stream
 		self.priority = priority
 		self.force = force
+		self.author = author
 		super().__init__(icom)
 	
 	def _read(self, options: StreamOptions) -> StreamData:

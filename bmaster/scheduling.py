@@ -3,6 +3,7 @@ from typing import Any, Coroutine, Literal, Optional, Self, Type, Union
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.executors.asyncio import AsyncIOExecutor
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
+from apscheduler.jobstores.memory import MemoryJobStore
 from pydantic import BaseModel, Field, ModelWrapValidatorHandler, field_validator, model_validator
 
 from bmaster import configs, logs
@@ -27,7 +28,12 @@ async def start():
 	config = SchedulingConfig.model_validate(configs.main_config['scheduling'])
 
 	scheduler.add_jobstore(
-		SQLAlchemyJobStore(url=config.url)
+		SQLAlchemyJobStore(url=config.url),
+		alias='default'
+	)
+	scheduler.add_jobstore(
+		MemoryJobStore(),
+		alias='temp'
 	)
 	scheduler.start()
 	logger.info('Scheduler started')
