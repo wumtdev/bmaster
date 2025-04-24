@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import Optional
 from fastapi import APIRouter, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -14,19 +15,30 @@ router = APIRouter(tags=['sounds'])
 
 SOUNDS_DIR = Path('data/sounds')
 
+class SoundSpecs(BaseModel):
+	duration: float
+
 class SoundInfo(BaseModel):
 	name: str
 	size: int
+	sound_specs: Optional[SoundSpecs] = None
 
 def is_sound_name_valid(name: str) -> bool:
 	return re.fullmatch(r'[a-zA-Zа-яА-Я\d_\- ]+\.[a-z\d]+', name) is not None
 
 @router.get('/info')
 async def get_sounds() -> list[SoundInfo]:
-	return [
-		SoundInfo(name=file.name, size=file.stat().st_size)
-		for file in SOUNDS_DIR.iterdir() if file.is_file()
-	]
+	res: list[SoundInfo] = []
+	for file in SOUNDS_DIR.iterdir():
+		if not file.is_file(): continue
+		name = file.name
+		sound = sounds.storage.get(name)
+		res.append(SoundInfo(
+			name=name,
+			size=file.stat().st_size,
+			sound_specs=SoundSpecs(duration=sound.duration) if sound else None
+		))
+	return res
 
 @router.get('/file/{name}')
 async def get_sound_file(name: str) -> FileResponse:

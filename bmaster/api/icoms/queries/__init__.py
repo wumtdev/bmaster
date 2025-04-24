@@ -1,10 +1,32 @@
 from uuid import UUID
 from fastapi import HTTPException
 
+from bmaster.api.auth.users import User, UserInfo
 import bmaster.icoms as icoms
 from bmaster import icoms
 from bmaster.api import api
+from bmaster.icoms.queries import QueryAuthor
 
+
+def query_author_from_user(user: UserInfo | User):
+	if not isinstance(user, UserInfo):
+		user = user.get_info()
+	match user.type:
+		case 'account':
+			return QueryAuthor(
+				type='account',
+				name=user.name,
+				label=f'#{user.id}'
+			)
+		case 'root':
+			return QueryAuthor(
+				type='root',
+				name='Администратор'
+			)
+	return QueryAuthor(
+		type='unknown',
+		label='Неизвестный'
+	)
 
 class QueryNotFound(HTTPException):
 	def __init__(self, id: str):

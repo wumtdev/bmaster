@@ -31,9 +31,9 @@ ICOM_ID = 'main'
 class Lesson(BaseModel):
 	enabled: bool
 	start_at: TimeHHMM
-	start_sound: str
+	start_sound: Optional[str] = None
 	end_at: TimeHHMM
-	end_sound: str
+	end_sound: Optional[str] = None
 
 class LessonWeekdays(BaseModel):
 	monday: bool
@@ -52,8 +52,12 @@ class BellsSettings(BaseModel):
 	enabled: bool
 	weekdays: LessonWeekdays
 
+class AnnouncementsSettings(BaseModel):
+	ring_sound: Optional[str] = None
+
 class LiteSettings(BaseModel):
 	bells: BellsSettings
+	announcements: AnnouncementsSettings
 
 	@staticmethod
 	def default():
@@ -70,6 +74,9 @@ class LiteSettings(BaseModel):
 					saturday=False,
 					sunday=False
 				)
+			),
+			announcements=AnnouncementsSettings(
+				ring_sound=None
 			)
 		)
 
@@ -109,8 +116,7 @@ async def on_lesson_start(lesson_id: int):
 		logger.error(f'Orphan job of start lesson #{lesson_id} detected')
 		return
 	
-	if not bells.enabled: return
-	if not lesson.enabled: return
+	if not (bells.enabled and lesson.enabled and lesson.start_sound): return
 	now = datetime.now()
 	if not bells.weekdays.get_by_number(now.weekday()): return
 
@@ -134,8 +140,7 @@ async def on_lesson_end(lesson_id: int):
 		logger.error(f'Orphan job of end lesson #{lesson_id} detected')
 		return
 	
-	if not bells.enabled: return
-	if not lesson.enabled: return
+	if not (bells.enabled and lesson.enabled and lesson.end_sound): return
 	now = datetime.now()
 	if not bells.weekdays.get_by_number(now.weekday()): return
 
@@ -225,4 +230,17 @@ async def patch_lesson(lesson_id: int, req: LessonPatchRequest):
 	
 	if req.enabled is not None:
 		lesson.enabled = req.enabled
+	await save_settings()
+
+
+@api.get('/lite/announcements', tags=['lite'])
+async def get_announcements_settings() -> AnnouncementsSettings:
+	return settings.announcements
+
+class AnnouncementsSettingsPatchRequest(BaseModel):
+	ring_sound: Optional[str] = None
+
+@api.patch('/lite/announcements', tags=['lite'])
+async def patch_announcements_settings(req: AnnouncementsSettingsPatchRequest):
+	settings.announcements.ring_sound = req.ring_sound
 	await save_settings()

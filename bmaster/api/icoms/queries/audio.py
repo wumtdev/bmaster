@@ -1,9 +1,13 @@
+from typing import Annotated
 import numpy as np
 from pydantic import BaseModel, ValidationError
-from fastapi import File, Form, HTTPException, UploadFile, status
+from fastapi import Depends, File, Form, HTTPException, UploadFile, status
 from wauxio import Audio
 
 from bmaster.api import api
+from bmaster.api.auth import require_user
+from bmaster.api.auth.users import User
+from bmaster.api.icoms.queries import query_author_from_user
 import bmaster.icoms as icoms
 from bmaster.icoms.queries import AudioQuery, QueryInfo
 
@@ -17,6 +21,7 @@ class APIAudioRequest(BaseModel):
 
 @api.post('/queries/audio', tags=['queries'])
 async def play_audio(
+	user: Annotated[User, Depends(require_user)],
 	request: str = Form(..., media_type='application/json'),
 	audio: UploadFile = File(...)
 ) -> QueryInfo:
@@ -47,7 +52,8 @@ async def play_audio(
 		icom=icom,
 		audio=audio,
 		priority=request.priority,
-		force=request.force
+		force=request.force,
+		author=query_author_from_user(user)
 	)
 	
 	return query.get_info()
