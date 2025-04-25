@@ -11,7 +11,6 @@ import bmaster.scheduling
 import bmaster.server
 import bmaster.scripting
 import bmaster.api
-import bmaster.frontend
 import bmaster.lite
 
 
@@ -44,22 +43,18 @@ async def start():
 	logger.info("Starting scripting...")
 	await bmaster.scripting.start()
 	logger.info("Scripting started")
+
+	logger.info('Starting api..')
+	await bmaster.api.start()
+	logger.info('Api started')
 	
 	logger.info("Starting server...")
 	await bmaster.server.start()
 	logger.info("Server started")
 
-	logger.info('Starting api..')
-	await bmaster.api.start()
-	logger.info('Api started')
-
 	logger.info('Starting addons...')
 	await bmaster.addons.start()
 	logger.info('Addons started')
-
-	logger.info('Starting frontend...')
-	await bmaster.frontend.start()
-	logger.info('Frontend started')
 
 	logger.info('Starting lite...')
 	await bmaster.lite.start()

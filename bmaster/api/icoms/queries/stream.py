@@ -20,7 +20,7 @@ class APIStreamRequest(BaseModel):
 	channels: int
 
 class APIStreamQuery(Query):
-	name = 'api.stream'
+	type = 'api.stream'
 	priority: int
 	force: bool
 	stack: AudioStack

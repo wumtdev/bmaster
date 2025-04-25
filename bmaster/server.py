@@ -1,9 +1,11 @@
 import asyncio
 from asyncio import Task
+from pathlib import Path
 from typing import Optional
-from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, Request
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 import uvicorn
 
 from bmaster import logs
@@ -35,7 +37,7 @@ async def start():
 	logger.info("Starting uvicorn...")
 	config = uvicorn.Config(
 		app,
-		host="127.0.0.1",
+		host="0.0.0.0",
 		port=8000,
 		loop="asyncio",
 		log_config=None
@@ -43,6 +45,23 @@ async def start():
 	server = uvicorn.Server(config)
 	serving = asyncio.create_task(server.serve())
 	logger.info("Uvicorn started")
+
+	# Serve React SPA for any other path
+	@app.get("/{full_path:path}")
+	async def serve_spa(request: Request, full_path: str):
+		if not index_path.exists():
+			return HTMLResponse("""
+				<h1>React App Not Built</h1>
+				<p>Run 'npm run build' in client directory first</p>
+			""", status_code=404)
+		
+		return FileResponse(index_path)
+
+
+# Serve static files from React build
+app.mount('/static', StaticFiles(directory='static'), name='static')
+index_path = Path('static/index.html')
+
 
 @app.get('/remote', response_class=HTMLResponse, tags=["html"])
 async def remote_get():
@@ -53,4 +72,5 @@ async def remote_get():
 async def listen_get():
 	with open('listen.html', 'r') as file:
 		return file.read()
+
 
