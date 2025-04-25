@@ -32,6 +32,9 @@ app.add_middleware(
 
 serving: Optional[Task] = None
 
+cert_path = Path('data/cert.pem')
+key_path = Path('data/key.pem')
+
 async def start():
 	global serving
 	logger.info("Starting uvicorn...")
@@ -42,6 +45,9 @@ async def start():
 		loop="asyncio",
 		log_config=None
 	)
+	if cert_path.exists() and key_path.exists():
+		config.ssl_keyfile = key_path
+		config.ssl_certfile = cert_path
 	server = uvicorn.Server(config)
 	serving = asyncio.create_task(server.serve())
 	logger.info("Uvicorn started")

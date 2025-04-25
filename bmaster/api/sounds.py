@@ -61,7 +61,7 @@ async def delete_sound_file(name: str):
 		raise HTTPException(status.HTTP_404_NOT_FOUND, 'File not found')
 	
 	os.remove(file_path)
-	sounds.storage.mount_sync(name)
+	sounds.storage.mount_sync()
 
 @router.post('/file')
 async def upload_sound_file(file: UploadFile):
@@ -75,4 +75,4 @@ async def upload_sound_file(file: UploadFile):
 	
 	async with await anyio.open_file(file_path, 'wb') as f:
 		await f.write(await file.read())
-	sounds.storage.mount_sync(name)
+	sounds.storage.mount_sync()
