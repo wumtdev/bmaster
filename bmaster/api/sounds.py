@@ -30,7 +30,7 @@ def is_sound_name_valid(name: str) -> bool:
     return re.fullmatch(r"[a-zA-Zа-яА-Я\d_\- ]+\.[a-z\d]+", name) is not None
 
 
-@router.get("/info")
+@router.get("/info", tags=["sounds"])
 async def get_sounds() -> list[SoundInfo]:
     res: list[SoundInfo] = []
     for file in SOUNDS_DIR.iterdir():
@@ -48,7 +48,7 @@ async def get_sounds() -> list[SoundInfo]:
     return res
 
 
-@router.get("/file/{name}")
+@router.get("/file/{name}", tags=["sounds"])
 async def get_sound_file(name: str) -> FileResponse:
     if not is_sound_name_valid(name):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid file name")
@@ -60,7 +60,7 @@ async def get_sound_file(name: str) -> FileResponse:
     return FileResponse(file_path)
 
 
-@router.delete("/file/{name}")
+@router.delete("/file/{name}", tags=["sounds"])
 async def delete_sound_file(name: str):
     if not is_sound_name_valid(name):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid file name")
@@ -73,7 +73,7 @@ async def delete_sound_file(name: str):
     sounds.storage.mount_sync()
 
 
-@router.post("/file")
+@router.post("/file", tags=["sounds"])
 async def upload_sound_file(file: UploadFile):
     name = file.filename
     print(name)

@@ -197,7 +197,7 @@ async def login(req: LoginRequest) -> Token:
 			token_type='bearer'
 		)
 
-@api.get('/auth/me')
+@api.get('/auth/me', tags=['auth'])
 async def get_me(user: Annotated[User, Depends(require_user)]) -> SerializeAsAny[UserLocalInfo]:
 	return user.get_local_info()
 
@@ -208,7 +208,7 @@ def validate_username(name: str):
 Username = Annotated[str, AfterValidator(validate_username)]
 
 
-@api.get('/accounts/{user_id}')
+@api.get('/accounts/{user_id}', tags=['auth'])
 async def get_account(user_id: int) -> AccountInfo:
 	from bmaster.database import LocalSession
 	async with LocalSession() as session:
@@ -224,7 +224,7 @@ class AccountCreateRequest(BaseModel):
 	password: str
 	role_ids: set[int] = Field(default_factory=lambda: set())
 
-@api.post('/accounts')
+@api.post('/accounts', tags=['auth'])
 async def create_account(req: AccountCreateRequest) -> AccountInfo:
 	from bmaster.database import LocalSession
 	user = Account(
@@ -247,7 +247,7 @@ class AccountUpdateRequest(BaseModel):
 	password: Optional[str] = None
 	role_ids: Optional[set[int]] = None
 
-@api.patch('/accounts/{user_id}')
+@api.patch('/accounts/{user_id}', tags=['auth'])
 async def update_account(user_id: int, req: AccountUpdateRequest) -> AccountInfo:
 	from bmaster.database import LocalSession
 	async with LocalSession() as session, session.begin():
@@ -265,7 +265,7 @@ async def update_account(user_id: int, req: AccountUpdateRequest) -> AccountInfo
 		if new_password is not None: user.set_password(new_password)
 	return user.get_info()
 
-@api.delete('/accounts/{user_id}')
+@api.delete('/accounts/{user_id}', tags=['auth'])
 async def delete_account(user_id: int):
 	from bmaster.database import LocalSession
 	async with LocalSession() as session, session.begin():
@@ -274,7 +274,7 @@ async def delete_account(user_id: int):
 		await session.delete(user)
 	return user.get_info()
 
-@api.get('/auth/roles')
+@api.get('/auth/roles', tags=['auth'])
 async def get_roles() -> list[RoleInfo]:
 	from bmaster.database import LocalSession
 	async with LocalSession() as session:
@@ -283,7 +283,7 @@ async def get_roles() -> list[RoleInfo]:
 		)).scalars().all()
 	return map(lambda r: r.get_info(), roles)
 
-@api.get('/auth/roles/{role_id}')
+@api.get('/auth/roles/{role_id}', tags=['auth'])
 async def get_role(role_id: int) -> RoleInfo:
 	from bmaster.database import LocalSession
 	async with LocalSession() as session:
@@ -295,7 +295,7 @@ class RoleCreateRequest(BaseModel):
 	name: str
 	permissions: set[str] = Field(default_factory=lambda: set())
 
-@api.post('/auth/roles')
+@api.post('/auth/roles', tags=['auth'])
 async def get_role(req: RoleCreateRequest) -> RoleInfo:
 	from bmaster.database import LocalSession
 	role = Role(

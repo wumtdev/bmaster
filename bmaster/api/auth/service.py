@@ -37,7 +37,7 @@ root = RootUser()
 class ServiceInfo(BaseModel):
 	enabled: bool
 
-@api.get('/auth/service')
+@api.get('/auth/service', tags=['auth'])
 async def get_service_info():
 	from bmaster.api.auth import config
 	enabled = config.service.enabled

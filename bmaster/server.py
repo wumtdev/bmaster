@@ -69,14 +69,3 @@ app.mount('/static', StaticFiles(directory='static'), name='static')
 index_path = Path('static/index.html')
 
 
-@app.get('/remote', response_class=HTMLResponse, tags=["html"])
-async def remote_get():
-	with open('remote.html', 'r') as file:
-		return file.read()
-	
-@app.get('/listen', response_class=HTMLResponse, tags=["html"])
-async def listen_get():
-	with open('listen.html', 'r') as file:
-		return file.read()
-
-
