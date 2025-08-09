@@ -1,0 +1,25 @@
+[project]
+name = "bmaster"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "aiosqlite>=0.21.0",
+    "anyio>=4.9.0",
+    "apscheduler>=3.11.0",
+    "fastapi>=0.116.1",
+    "jinja2>=3.1.6",
+    "passlib[bcrypt]>=1.7.4",
+    "pyjwt>=2.10.1",
+    "python-multipart>=0.0.20",
+    "sounddevice>=0.5.2",
+    "sqlalchemy>=2.0.41",
+    "uvicorn>=0.35.0",
+    "wauxio",
+    "wsignals",
+]
+
+[tool.uv.sources]
+wauxio = { git = "https://github.com/wumtdev/wauxio.git" }
+wsignals = { git = "https://github.com/wumtdev/wsignals.git" }

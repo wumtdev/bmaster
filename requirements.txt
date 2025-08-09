@@ -9,4 +9,5 @@ SQLAlchemy
 APScheduler
 pyjwt
 passlib[bcrypt]
+python-multipart
 Jinja2

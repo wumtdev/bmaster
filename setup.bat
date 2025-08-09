@@ -23,4 +23,8 @@ echo [-] Installing requirements...
 pip install -r requirements.txt
 echo [+] Installed requirements
 
+echo [-] Creating data directory and app data...
+python3 setup.py
+:: There script will create the necessary directories and files and print messages
+
 echo [=] Installation finished

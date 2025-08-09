@@ -5,6 +5,7 @@
 **/*.egg-info
 **/dist
 **/build
+**/uv.lock
 
 # IDE stuff
 **/.vscode
