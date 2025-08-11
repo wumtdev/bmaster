@@ -17,6 +17,7 @@ dependencies = [
     "sqlalchemy>=2.0.41",
     "uvicorn>=0.35.0",
     "wauxio",
+    "websockets>=15.0.1",
     "wsignals",
 ]
 

@@ -116,10 +116,13 @@ async def on_lesson_start(lesson_id: int):
 		logger.error(f'Orphan job of start lesson #{lesson_id} detected')
 		return
 	
-	if not (bells.enabled and lesson.enabled and lesson.start_sound): return
+	if not (bells.enabled and lesson.enabled and lesson.start_sound): 
+		logger.info(f'Lesson #{lesson_id} is not enabled or has no start sound')
+		return
 	now = datetime.now()
-	if not bells.weekdays.get_by_number(now.weekday()): return
-
+	if not bells.weekdays.get_by_number(now.weekday()): 
+		logger.info(f'Lesson #{lesson_id} is not scheduled for today')
+		return
 	# Play sound
 	SoundQuery(
 		icom=icoms.get(ICOM_ID),
@@ -140,9 +143,13 @@ async def on_lesson_end(lesson_id: int):
 		logger.error(f'Orphan job of end lesson #{lesson_id} detected')
 		return
 	
-	if not (bells.enabled and lesson.enabled and lesson.end_sound): return
+	if not (bells.enabled and lesson.enabled and lesson.end_sound):
+		logger.info(f'Lesson #{lesson_id} is not enabled or has no start sound')
+		return
 	now = datetime.now()
-	if not bells.weekdays.get_by_number(now.weekday()): return
+	if not bells.weekdays.get_by_number(now.weekday()):
+		logger.info(f'Lesson #{lesson_id} is not scheduled for today')
+		return
 
 	# Play sound
 	SoundQuery(
