@@ -4,8 +4,6 @@ import signal
 from typing import Optional
 
 import bmaster
-from bmaster.exc import StartError
-
 
 
 # def cancel_loop(loop):
@@ -17,26 +15,22 @@ from bmaster.exc import StartError
 main_task: Optional[asyncio.Task] = None
 async def main():
 	global main_task
+
 	loop = asyncio.get_running_loop()
 	main_task = asyncio.current_task(loop)
-	if sys.platform != "win32":
-		for sig in (signal.SIGINT, signal.SIGTERM):
-			loop.add_signal_handler(sig, lambda *_: main_task.cancel())
+	# if sys.platform != "win32":
+	# 	for sig in (signal.SIGINT, signal.SIGTERM):
+	# 		loop.add_signal_handler(sig, lambda *_: main_task.cancel())
 
-	print("main: starting bmaster...")
 	await bmaster.start()
-	print("main: bmaster started")
 
 	try: await loop.create_future()
 	except asyncio.CancelledError: pass
 
-	print("main: Stopping bmaster...")
 	await bmaster.stop()
-	print("main: Bmaster stopped")
 
 if __name__ == "__main__":
-	try: asyncio.run(main())
-	except StartError: pass
+	asyncio.run(main())
 
 
 # def stop_loop(loop: AbstractEventLoop):

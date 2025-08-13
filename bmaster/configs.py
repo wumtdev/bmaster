@@ -1,31 +1,39 @@
-import anyio
-import json
+import yaml
+from pathlib import Path
 from typing import Optional
 
-from bmaster import logs
-from bmaster.exc import StartError
+from bmaster.logs import main_logger
 
 
-logger = logs.logger.getChild('config')
+logger = main_logger.getChild('configs')
 
-CONFIG_PATH = "data/config.json"
+CONFIG_PATH = Path('data/config.yml')
 main_config: Optional[dict] = None
 
-async def start():
-	logger.info("Loading main config...")
+def load_configs():
+	global main_config
+
+	logger.info('Loading main config...')
+
 	try:
-		async with await anyio.open_file(CONFIG_PATH, "r", encoding="utf-8") as f:
-			_data = await f.read()
-			_data = json.loads(_data)
-			if not isinstance(_data, dict):
-				logger.critical("Invalid main config")
-				raise StartError()
-			global main_config
-			main_config = _data
-		logger.info("Main config loaded")
-	except FileNotFoundError:
-		logger.critical("Main config file 'data/config.json' not found")
-		raise StartError()
-	except json.JSONDecodeError as e:
-		logger.critical("Failed to decode main config json:\n%s", e)
-		raise StartError()
+		with open(CONFIG_PATH, 'r', encoding='utf8') as f:
+			config = yaml.safe_load(f)
+		if not isinstance(config, dict):
+			raise ValueError('Config root node should be a dictionary')
+		main_config = config
+	except Exception as e:
+		logger.error('Failed to load main config', exc_info=e)
+		raise
+
+	logger.info('Main config loaded')
+
+def get(name: str):
+	if main_config is None:
+		raise RuntimeError('Main config is not loaded yet')
+	
+	try:
+		data = main_config[name]
+		return data
+	except KeyError:
+		logger.error(f'Main config partition "{name}" is missing')
+		raise

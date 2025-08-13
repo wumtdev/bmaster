@@ -12,7 +12,7 @@ from bmaster.api import api
 from bmaster.utils import TimeHHMM
 
 
-logger = logs.logger.getChild('lite')
+logger = logs.main_logger.getChild('lite')
 router = APIRouter(tags=['lite'])
 
 
@@ -87,7 +87,9 @@ settings: Optional[LiteSettings] = None
 
 async def load_settings():
 	global settings
+
 	if SETTINGS_PATH.exists():
+		logger.info('Loading settings...')
 		try:
 			data = SETTINGS_PATH.read_text(encoding='utf8')
 			settings = LiteSettings.model_validate_json(data)
@@ -97,13 +99,18 @@ async def load_settings():
 			# settings = LiteSettings(lessons_list=[], lessons_enabled=False, lessons_weekdays=LessonWeekdays(
 			# 	monday=False, tuesday=False, wednesday=False, thursday=False, friday=False, saturday=False, sunday=False))
 	else:
+		logger.info('Settings file is missing, loading default settings...')
 		settings = LiteSettings.default()
 		await save_settings()
+	
+	logger.info('Settings loaded')
 
 async def save_settings():
+	logger.info('Saving settings...')
 	if settings:
 		try:
 			SETTINGS_PATH.write_text(settings.model_dump_json(indent=4), encoding='utf8')
+			logger.info('Settings saved')
 		except Exception as e:
 			logger.error(f"Failed to save settings: {e}")
 
@@ -164,6 +171,8 @@ async def on_lesson_end(lesson_id: int):
 	)
 
 async def reschedule_lessons():
+	logger.info('Rescheduling lessons...')
+
 	# Clear old schedule jobs
 	for job in scheduler.get_jobs(jobstore='temp'):
 		if job.id.startswith('lite.lesson'):
@@ -194,11 +203,15 @@ async def reschedule_lessons():
 			}
 		)
 
+	logger.info('Lessons rescheduled')
+
 
 async def start():
+	logger.info('Starting lite...')
 	await load_settings()
 	await reschedule_lessons()
 	api.include_router(router, prefix='/lite')
+	logger.info('Lite started')
 
 
 @api.get('/lite/bells', tags=['lite'])

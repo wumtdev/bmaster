@@ -10,5 +10,5 @@ logging.basicConfig(
 	],
 )
 
-logger = logging.getLogger('bmaster')
+main_logger = logging.getLogger('bmaster')
 # logger.setLevel(logging.DEBUG)

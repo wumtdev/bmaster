@@ -6,7 +6,7 @@ import sounddevice as sd
 from bmaster import logs
 
 
-logger = logs.logger.getChild('direct')
+logger = logs.main_logger.getChild('direct')
 
 RATE = 48000
 CHANNELS = 2

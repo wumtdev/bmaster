@@ -1,12 +1,17 @@
 from fastapi import APIRouter
 
 from bmaster.server import app
+from bmaster.logs import main_logger
 
+
+logger = main_logger.getChild('api')
 
 api = APIRouter()
 
 
 async def start():
+	logger.info('Importing endpoints...')
+
 	import bmaster.api.auth
 	await bmaster.api.auth.start()
 
@@ -20,6 +25,9 @@ async def start():
 	from bmaster.api import scripting
 	from bmaster.api import sounds
 
-	api.include_router(sounds.router, prefix='/sounds')
+	logger.info('Including routers...')
 
+	api.include_router(sounds.router, prefix='/sounds')
 	app.include_router(api, prefix='/api')
+
+	logger.info('api started')

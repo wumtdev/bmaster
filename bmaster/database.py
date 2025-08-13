@@ -13,7 +13,7 @@ class DatabaseConfig(BaseModel):
 
 config: Optional[DatabaseConfig] = None
 
-logger = logs.logger.getChild('database')
+logger = logs.main_logger.getChild('database')
 
 engine: Optional[AsyncEngine] = None
 LocalSession: sessionmaker[AsyncSession] = None
@@ -23,7 +23,10 @@ Base = declarative_base()
 
 async def start():
 	global config, engine, LocalSession
-	config = DatabaseConfig.model_validate(configs.main_config['database'])
+	
+	logger.info('Starting database...')
+	
+	config = DatabaseConfig.model_validate(configs.get('database'))
 
 	logger.info('Initializing engine...')
 	engine = create_async_engine(
@@ -38,11 +41,18 @@ async def start():
 		expire_on_commit=False
 	)
 	logger.info('Session maker initialized')
+	
+	logger.info('Database started')
 
 async def update_models():
 	global Base
+
+	logger.info('Updating models...')
+
 	async with engine.begin() as conn:
 		await conn.run_sync(Base.metadata.create_all)
+
+	logger.info('Models updated')
 
 async def stop():
 	logger.info('Stopping database...')

@@ -29,7 +29,7 @@ class AuthConfig(BaseModel):
 
 config: Optional[AuthConfig] = None
 
-logger = logs.logger.getChild('auth')
+logger = logs.main_logger.getChild('auth')
 
 hasher: Optional[CryptContext] = None
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl='/api/auth/login_form')

@@ -5,16 +5,19 @@ from pathlib import Path
 from bmaster import logs
 
 
-logger = logs.logger.getChild('addons')
+logger = logs.main_logger.getChild('addons')
 
-ADDONS_DIR = Path('./addons')
+PLUGINS_DIR = Path('addons')
 
-async def mount_addons():
-	if not ADDONS_DIR.exists():
-		ADDONS_DIR.mkdir()
+async def mount_plugins():
+	if not PLUGINS_DIR.exists():
+		logger.info('Plugins dir does not exists, creating...')
+		PLUGINS_DIR.mkdir()
 		return
 	
-	for entry in ADDONS_DIR.iterdir():
+	logger.info('Searching for plugins...')
+
+	for entry in PLUGINS_DIR.iterdir():
 		if entry.is_file():
 			if entry.suffix != '.py': continue
 			if entry.name == '__init__.py': continue
@@ -39,8 +42,5 @@ async def mount_addons():
 				await coro
 		
 		logger.info(f'Addon \'{addon_name}\' mounted')
-
-async def start():
-	logger.info('Mounting addons...')
-	await mount_addons()
-	logger.info('Addons mounted')
+	
+	logger.info('Plugins mounted')

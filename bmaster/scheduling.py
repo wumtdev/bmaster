@@ -14,7 +14,7 @@ class SchedulingConfig(BaseModel):
 
 config: Optional[SchedulingConfig] = None
 
-logger = logs.logger.getChild('scheduling')
+logger = logs.main_logger.getChild('scheduling')
 
 scheduler = AsyncIOScheduler(
 	logger=logger.getChild('apscheduler'),

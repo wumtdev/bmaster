@@ -5,7 +5,7 @@ from wauxio.codecs.wave import from_wav
 from bmaster import logs
 
 
-logger = logs.logger.getChild('sounds')
+logger = logs.main_logger.getChild('sounds')
 
 root = Path('data/sounds')
 storage = FileSoundStorage(

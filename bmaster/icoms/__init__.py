@@ -11,7 +11,7 @@ from .queries import PlayOptions, Query, QueryInfo
 from bmaster import configs
 
 
-logger = logs.logger.getChild('icoms')
+logger = logs.main_logger.getChild('icoms')
 
 
 class IcomInfo(BaseModel):
@@ -141,7 +141,9 @@ config: Optional[IcomsConfig] = None
 async def start():
 	global config
 
-	config = IcomsConfig.model_validate(configs.main_config['icoms'])
+	config = IcomsConfig.model_validate(configs.get('icoms'))
+
+	logger.debug('Initializing icoms from config...')
 	
 	for icom_id, icom_config in config.icoms.items():
 		icom = Icom(icom_id)
@@ -158,3 +160,5 @@ async def start():
 			direct.output_mixer.add(stack.pull)
 		_icoms_map[icom_id] = icom
 		asyncio.create_task(icom.run())
+
+	logger.debug('Icoms initialized')

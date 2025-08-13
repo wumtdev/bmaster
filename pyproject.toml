@@ -13,14 +13,14 @@ dependencies = [
     "passlib[bcrypt]>=1.7.4",
     "pyjwt>=2.10.1",
     "python-multipart>=0.0.20",
+    "pyyaml>=6.0.2",
     "sounddevice>=0.5.2",
     "sqlalchemy>=2.0.41",
     "uvicorn>=0.35.0",
     "wauxio",
     "websockets>=15.0.1",
-    "wsignals",
+    "wsignals>=0.2.3",
 ]
 
 [tool.uv.sources]
 wauxio = { git = "https://github.com/wumtdev/wauxio.git" }
-wsignals = { git = "https://github.com/wumtdev/wsignals.git" }

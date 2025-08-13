@@ -11,7 +11,7 @@ import uvicorn
 from bmaster import logs
 
 
-logger = logs.logger.getChild('server')
+logger = logs.main_logger.getChild('server')
 
 app = FastAPI(
 	title="bmaster"
