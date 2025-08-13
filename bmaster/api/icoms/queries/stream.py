@@ -53,6 +53,7 @@ async def play_stream(ws: WebSocket):
 	try:
 		try:
 			request = APIStreamRequest.model_validate_json(await ws.receive_text())
+			print(request)
 		except ValidationError as e:
 			await ws.send_json({
 				'type': 'error',
@@ -84,8 +85,8 @@ async def play_stream(ws: WebSocket):
 
 	q = APIStreamQuery(
 		icom=icom,
-		priority=request.priority,
-		force=request.force,
+		priority=1,
+		force=False,
 		rate=rate,
 		channels=channels
 	)
@@ -99,6 +100,7 @@ async def play_stream(ws: WebSocket):
 		q.cancel()
 		return
 	
+	@q.on_cancel
 	async def on_cancel():
 		try:
 			await ws.send_json({
@@ -109,6 +111,7 @@ async def play_stream(ws: WebSocket):
 		except WebSocketDisconnect: pass
 		except RuntimeError: pass
 	
+	@q.on_stop
 	async def on_stop():
 		try:
 			await ws.send_json({
@@ -118,6 +121,7 @@ async def play_stream(ws: WebSocket):
 		except WebSocketDisconnect: pass
 		except RuntimeError: pass
 	
+	@q.on_play
 	async def on_play():
 		try:
 			await ws.send_json({
@@ -126,13 +130,11 @@ async def play_stream(ws: WebSocket):
 			})
 		except WebSocketDisconnect: pass
 
-	q.on_cancel.connect_async(on_cancel)
-	q.on_stop.connect_async(on_stop)
-	q.on_play.connect_async(on_play)
-
 	async for msg in ws.iter_bytes():
+		# print(msg)
 		arr = np.frombuffer(msg, dtype=np.float32).reshape((-1, channels))
 		# TODO: Implement multi-channel support
+		print(arr)
 		audio = Audio(arr, rate)
 		q.stack.push(StreamData(audio))
 	
