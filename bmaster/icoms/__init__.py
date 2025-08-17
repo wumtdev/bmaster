@@ -36,7 +36,7 @@ class Icom:
 		mixer = AudioMixer()
 		output = AudioOutput(
 			rate=48000,
-			channels=2
+			channels=1
 		)
 		output.connect(mixer.mix)
 		self.queue = list()

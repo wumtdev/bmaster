@@ -134,7 +134,6 @@ async def play_stream(ws: WebSocket):
 		# print(msg)
 		arr = np.frombuffer(msg, dtype=np.float32).reshape((-1, channels))
 		# TODO: Implement multi-channel support
-		print(arr)
 		audio = Audio(arr, rate)
 		q.stack.push(StreamData(audio))
 	
