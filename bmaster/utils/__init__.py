@@ -26,8 +26,8 @@ def serialize_time_hhmm(t: time) -> str:
 
 # Create an annotated type that combines both
 TimeHHMM = Annotated[
-    time,
-    BeforeValidator(parse_time_hhmm),
-    PlainSerializer(serialize_time_hhmm, return_type=str),
-    # Field(..., pattern=r"^([0-1][0-9]|2[0-3]):[0-5][0-9]$")
+	time,
+	BeforeValidator(parse_time_hhmm),
+	PlainSerializer(serialize_time_hhmm, return_type=str),
+	# Field(..., pattern=r"^([0-1][0-9]|2[0-3]):[0-5][0-9]$")
 ]

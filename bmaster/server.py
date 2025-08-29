@@ -1,55 +1,84 @@
 import asyncio
 from asyncio import Task
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, Field
 import uvicorn
 
-from bmaster import logs
+from bmaster import configs, logs
 
 
 logger = logs.main_logger.getChild('server')
+
+
+class CORSConfig(BaseModel):
+	allow_origins: List[str] = ['*']
+	allow_credentials: bool = True
+	allow_methods: List[str] = Field(default_factory=lambda: ['*'])
+	allow_headers: List[str] = Field(default_factory=lambda: ['*'])
+
+class SSLConfig(BaseModel):
+	enabled: bool = False
+	cert_path: Path = Path('data/cert.pem')
+	key_path: Path = Path('data/cert.pem')
+
+class ServerConfig(BaseModel):
+	cors: CORSConfig = Field(default_factory=CORSConfig)
+	ssl: SSLConfig = Field(default_factory=SSLConfig)
+
+config: Optional[ServerConfig] = None
+
 
 app = FastAPI(
 	title="bmaster"
 )
 
-origins = [
-	"*",
-]
+serving_task: Optional[Task] = None
 
-app.add_middleware(
-	CORSMiddleware,
-	allow_origins=origins,
-	allow_credentials=True,
-	allow_methods=["*"],
-	allow_headers=["*"],
-)
-
-
-serving: Optional[Task] = None
-
-cert_path = Path('data/cert.pem')
-key_path = Path('data/key.pem')
 
 async def start():
-	global serving
-	logger.info("Starting uvicorn...")
-	config = uvicorn.Config(
+	global serving_task, config
+
+	config = ServerConfig.model_validate(configs.get('server', None) or ServerConfig())
+
+	cors_config = config.cors
+	app.add_middleware(
+		CORSMiddleware,
+		allow_origins=cors_config.allow_origins,
+		allow_credentials=cors_config.allow_credentials,
+		allow_methods=cors_config.allow_methods,
+		allow_headers=cors_config.allow_headers,
+	)
+
+	logger.info('Configuring uvicorn...')
+
+	uvicorn_config = uvicorn.Config(
 		app,
 		host="0.0.0.0",
 		port=8000,
 		loop="asyncio",
 		log_config=None
 	)
-	if cert_path.exists() and key_path.exists():
-		config.ssl_keyfile = key_path
-		config.ssl_certfile = cert_path
-	server = uvicorn.Server(config)
-	serving = asyncio.create_task(server.serve())
+
+	ssl_config = config.ssl
+	if ssl_config.enabled:
+		cert_path = ssl_config.cert_path
+		key_path = ssl_config.key_path
+
+		if not (cert_path.exists() and key_path.exists()):
+			raise RuntimeError('Configured certificate or key file not found')
+		uvicorn_config.ssl_keyfile = key_path
+		uvicorn_config.ssl_certfile = cert_path
+	
+	logger.info("Starting uvicorn...")
+
+	server = uvicorn.Server(uvicorn_config)
+	serving_task = asyncio.create_task(server.serve())
+
 	logger.info("Uvicorn started")
 
 	# Serve React SPA for any other path

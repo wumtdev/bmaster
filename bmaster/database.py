@@ -90,5 +90,27 @@ class TextArray(TypeDecorator):
 		if not value: return None
 		res = value.split(',')
 		if self.unique_set:
-			res = set(res)
+			return set(res)
+		return res
+
+class ReprArray(TypeDecorator):
+	impl = Text
+	
+	item = type
+	unique_set: bool
+
+	def __init__(self, item: type, unique_set: bool = False, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		self.item = item
+		self.unique_set = unique_set
+
+	def process_bind_param(self, value: list | None, dialect):
+		# TODO: Escape ',' chars
+		return ','.join(map(repr, value)) if value is not None else None
+	
+	def process_result_value(self, value: str | None, dialect):
+		if not value: return None
+		res = map(self.item, value.split(','))
+		if self.unique_set:
+			return set(res)
 		return res

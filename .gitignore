@@ -11,6 +11,7 @@
 **/.vscode
 
 # Testing/temporary stuff
-data
-addons
-static
+data/
+addons/
+plugins/
+static/

@@ -4,7 +4,7 @@ from enum import Enum
 import uuid
 from pydantic import BaseModel
 from wauxio.mixer import AudioMixer
-from wauxio import Audio, AudioReader, IAudioReader, StreamOptions, StreamData
+from wauxio import Audio, AudioReader, AudioReaderType, StreamOptions, StreamData
 from wsignals import Signal
 
 from bmaster import sounds
@@ -212,11 +212,11 @@ class AudioQuery(Query):
 
 class StreamQuery(Query):
 	type = 'stream'
-	stream: IAudioReader
+	stream: AudioReaderType
 	priority: int
 	force: bool
 
-	def __init__(self, icom: "Icom", stream: IAudioReader, priority: int = 0, force: bool = False, author: Optional[QueryAuthor] = None):
+	def __init__(self, icom: "Icom", stream: AudioReaderType, priority: int = 0, force: bool = False, author: Optional[QueryAuthor] = None):
 		self.description = "Playing plain audio stream"
 		self.stream = stream
 		self.priority = priority

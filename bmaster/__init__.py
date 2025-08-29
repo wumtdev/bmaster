@@ -25,9 +25,9 @@ async def start():
 	await bmaster.icoms.start()
 	await bmaster.scheduling.start()
 	await bmaster.scripting.start()
+	await bmaster.plugins.mount_plugins()
 	await bmaster.api.start()
 	await bmaster.server.start()
-	await bmaster.plugins.mount_plugins()
 	await bmaster.lite.start()
 
 	# POST START

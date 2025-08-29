@@ -5,9 +5,9 @@ from pathlib import Path
 from bmaster import logs
 
 
-logger = logs.main_logger.getChild('addons')
+logger = logs.main_logger.getChild('plugins')
 
-PLUGINS_DIR = Path('addons')
+PLUGINS_DIR = Path('plugins')
 
 async def mount_plugins():
 	if not PLUGINS_DIR.exists():
@@ -29,10 +29,10 @@ async def mount_plugins():
 		else:
 			continue
 
-		addon_name = entry.stem
-		module_name = 'addons.' + addon_name
+		plugin_name = entry.stem
+		module_name = 'plugins.' + plugin_name
 		
-		logger.info(f'Mounting addon \'{addon_name}\', module: \'{module_name}\'...')
+		logger.info(f'Mounting addon \'{plugin_name}\', module: \'{module_name}\'...')
 
 		module = importlib.import_module(module_name)
 		start_fn = getattr(module, 'start', None)
@@ -41,6 +41,6 @@ async def mount_plugins():
 			if asyncio.iscoroutine(coro):
 				await coro
 		
-		logger.info(f'Addon \'{addon_name}\' mounted')
+		logger.info(f'Addon \'{plugin_name}\' mounted')
 	
 	logger.info('Plugins mounted')

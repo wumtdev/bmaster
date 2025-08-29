@@ -1,23 +1,47 @@
 import json
+import yaml
 from pathlib import Path
 import secrets
+import requests
+import os
+import zipfile
 
 # Default configuration data
-config_data = {
-    "database": {"url": "sqlite+aiosqlite:///./data/database.db"},
-    "scheduling": {"url": "sqlite:///./data/database.db"},
+config = {
+    "database": {
+        "url": "sqlite+aiosqlite:///./data/database.db",
+    },
+    "scheduling": {
+        "url": "sqlite:///./data/database.db",
+    },
     "scripting": {},
     "auth": {
         "jwt": {
-            "secret_key": secrets.token_urlsafe(32),
+            "secret_key": secrets.token_hex(32),
             "algorithm": "HS256",
             "expire_minutes": 30,
         },
-        "hasher": {"schemas": "bcrypt"},
-        "service": {"enabled": True, "password": "rpass"},
+        "hasher": {
+            "schemas": "bcrypt",
+        },
+        "service": {
+            "enabled": True,
+            "password": "rpass",
+        },
     },
-    "icoms": {"icoms": {"main": {"name": "Главный", "direct": True}}},
+    "icoms": {
+        "icoms": {
+            "main": {
+                "name": "Главный",
+                "direct": True,
+            },
+            "labs": {
+                "name": "Лаборатории",
+            },
+        },
+    },
 }
+
 
 lite_config_data = {
     "bells": {
@@ -37,6 +61,7 @@ lite_config_data = {
 }
 
 base_path = Path("data")
+static_path = Path("static")
 print(f"[-] Checking for directory: {base_path}...")
 
 # Check if the directory exists and has no files
@@ -49,17 +74,27 @@ if not base_path.exists() or not any(base_path.iterdir()):
         sounds_path.mkdir(exist_ok=True)
         print(f"[+] Directory '{sounds_path}' checked/created.")
 
-        config_path = base_path / "config.json"
+        config_path = base_path / "config.yml"
         if not config_path.exists():
-            with config_path.open("w", encoding="utf-8") as f:
-                json.dump(config_data, f, ensure_ascii=False, indent=2)
-            print("[+] Config file 'config.json' created.")
+            with open(config_path, "w", encoding="utf-8") as f:
+                yaml.safe_dump(config, f, allow_unicode=True, sort_keys=False, default_flow_style=False)
+            print("[+] Config file 'config.yml' created.")
 
         lite_config_path = base_path / "lite.json"
         if not lite_config_path.exists():
             with lite_config_path.open("w", encoding="utf-8") as f:
                 json.dump(lite_config_data, f, ensure_ascii=False, indent=2)
             print("[+] Config file 'lite.json' created.")
+        
+        static_path.mkdir(exist_ok=True)
+
+        url = "https://github.com/wumtdev/bmaster-lite/releases/latest/download/frontend-build.zip"
+        with requests.get(url, stream=True) as r:
+            with open("build.zip", "wb") as f:
+                for chunk in r.iter_content(8192):
+                    if chunk:
+                        f.write(chunk)
+        
 
         logs_path = base_path / "logs.log"
         if not logs_path.exists():

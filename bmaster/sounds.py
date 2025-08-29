@@ -1,7 +1,7 @@
 from pathlib import Path
 from wauxio.storage import FileSoundStorage
-from wauxio.codecs.wave import from_wav
 from wauxio.codecs.mp3 import from_mp3
+from wauxio.codecs.any import from_any
 
 from bmaster import logs
 
@@ -15,8 +15,8 @@ storage = FileSoundStorage(
 )
 
 
-storage.use_sync_codec('.wav', from_wav)
 storage.use_sync_codec('.mp3', from_mp3)
+storage.use_sync_codec('*', from_any)
 
 
 async def start():

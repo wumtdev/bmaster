@@ -1,0 +1,24 @@
+database:
+  url: sqlite+aiosqlite:///./data/database.db
+
+scheduling:
+  url: sqlite:///./data/database.db
+
+scripting: {}
+
+auth:
+  jwt:
+    secret_key: "auth.jwt.secret_key"
+    algorithm: HS256
+    expire_minutes: 30
+  hasher:
+    schemas: bcrypt
+  service:
+    enabled: false
+    password: rpass
+
+icoms:
+  icoms:
+    main:
+      name: "Главный"
+      direct: true

@@ -22,7 +22,7 @@ logger = logs.main_logger.getChild('scripting')
 async def start():
 	logger.debug('Starting scripting...')
 	global config
-	config = ScriptingConfig.model_validate(configs.get('scripting'))
+	config = ScriptingConfig.model_validate(configs.get('scripting', None) or ScriptingConfig())
 	logger.debug('Scripting started')
 
 

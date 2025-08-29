@@ -8,6 +8,7 @@ from bmaster.logs import main_logger
 logger = main_logger.getChild('configs')
 
 CONFIG_PATH = Path('data/config.yml')
+_UNDEFINED = {}
 main_config: Optional[dict] = None
 
 def load_configs():
@@ -27,7 +28,7 @@ def load_configs():
 
 	logger.info('Main config loaded')
 
-def get(name: str):
+def get(name: str, default = _UNDEFINED):
 	if main_config is None:
 		raise RuntimeError('Main config is not loaded yet')
 	
@@ -35,5 +36,8 @@ def get(name: str):
 		data = main_config[name]
 		return data
 	except KeyError:
-		logger.error(f'Main config partition "{name}" is missing')
-		raise
+		if default is _UNDEFINED:
+			logger.error(f'Main config partition "{name}" is missing')
+			raise
+		else:
+			return default
