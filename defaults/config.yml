@@ -8,7 +8,7 @@ scripting: {}
 
 auth:
   jwt:
-    secret_key: "auth.jwt.secret_key"
+    secret_key: secret_key
     algorithm: HS256
     expire_minutes: 30
   hasher:

@@ -3,108 +3,76 @@ import yaml
 from pathlib import Path
 import secrets
 import requests
-import os
 import zipfile
+import io
 
-# Default configuration data
-config = {
-    "database": {
-        "url": "sqlite+aiosqlite:///./data/database.db",
-    },
-    "scheduling": {
-        "url": "sqlite:///./data/database.db",
-    },
-    "scripting": {},
-    "auth": {
-        "jwt": {
-            "secret_key": secrets.token_hex(32),
-            "algorithm": "HS256",
-            "expire_minutes": 30,
-        },
-        "hasher": {
-            "schemas": "bcrypt",
-        },
-        "service": {
-            "enabled": True,
-            "password": "rpass",
-        },
-    },
-    "icoms": {
-        "icoms": {
-            "main": {
-                "name": "Главный",
-                "direct": True,
-            },
-            "labs": {
-                "name": "Лаборатории",
-            },
-        },
-    },
-}
+BASE_PATH = Path("data")
+STATIC_PATH = Path("static")
+DEFAULT_CONFIG_FILE = Path("defaults/config.yml")
+DEFAULT_LITE_FILE = Path("defaults/lite.json")
 
+# Data Setup
+print(f"[-] Checking for directory: {BASE_PATH}...")
 
-lite_config_data = {
-    "bells": {
-        "lessons": [],
-        "enabled": False,
-        "weekdays": {
-            "monday": True,
-            "tuesday": True,
-            "wednesday": True,
-            "thursday": True,
-            "friday": True,
-            "saturday": False,
-            "sunday": False,
-        },
-    },
-    "announcements": {"ring_sound": None},
-}
+if not BASE_PATH.exists() or not any(BASE_PATH.iterdir()):
+    BASE_PATH.mkdir(parents=True, exist_ok=True)
+    print(f"[+] Directory '{BASE_PATH}' checked/created.")
 
-base_path = Path("data")
-static_path = Path("static")
-print(f"[-] Checking for directory: {base_path}...")
+    (BASE_PATH / "sounds").mkdir(parents=True, exist_ok=True)
+    print(f"[+] Directory '{BASE_PATH / 'sounds'}' checked/created.")
 
-# Check if the directory exists and has no files
-if not base_path.exists() or not any(base_path.iterdir()):
-    try:
-        base_path.mkdir(exist_ok=True)
-        print(f"[+] Directory '{base_path}' checked/created.")
+    # config.yml
+    config_path = BASE_PATH / "config.yml"
+    if not config_path.exists() and DEFAULT_CONFIG_FILE.exists():
+        config_data = yaml.safe_load(DEFAULT_CONFIG_FILE.read_text(encoding="utf-8"))
+        if "auth" in config_data and "jwt" in config_data["auth"]:
+            config_data["auth"]["jwt"]["secret_key"] = secrets.token_hex(32)
 
-        sounds_path = base_path / "sounds"
-        sounds_path.mkdir(exist_ok=True)
-        print(f"[+] Directory '{sounds_path}' checked/created.")
+        with config_path.open("w", encoding="utf-8") as f:
+            yaml.safe_dump(
+                config_data,
+                f,
+                allow_unicode=True,
+                sort_keys=False,
+                default_flow_style=False,
+            )
+        print("[+] Config file 'config.yml' created.")
 
-        config_path = base_path / "config.yml"
-        if not config_path.exists():
-            with open(config_path, "w", encoding="utf-8") as f:
-                yaml.safe_dump(config, f, allow_unicode=True, sort_keys=False, default_flow_style=False)
-            print("[+] Config file 'config.yml' created.")
+    # lite.json
+    lite_config_path = BASE_PATH / "lite.json"
+    if not lite_config_path.exists() and DEFAULT_LITE_FILE.exists():
+        lite_config_data = json.loads(DEFAULT_LITE_FILE.read_text(encoding="utf-8"))
+        with lite_config_path.open("w", encoding="utf-8") as f:
+            json.dump(lite_config_data, f, ensure_ascii=False, indent=2)
+        print("[+] Config file 'lite.json' created.")
 
-        lite_config_path = base_path / "lite.json"
-        if not lite_config_path.exists():
-            with lite_config_path.open("w", encoding="utf-8") as f:
-                json.dump(lite_config_data, f, ensure_ascii=False, indent=2)
-            print("[+] Config file 'lite.json' created.")
-        
-        static_path.mkdir(exist_ok=True)
+    # logs.log
+    logs_path = BASE_PATH / "logs.log"
+    if not logs_path.exists():
+        logs_path.touch()
+        print("[+] Log file 'logs.log' created.")
 
-        url = "https://github.com/wumtdev/bmaster-lite/releases/latest/download/frontend-build.zip"
-        with requests.get(url, stream=True) as r:
-            with open("build.zip", "wb") as f:
-                for chunk in r.iter_content(8192):
-                    if chunk:
-                        f.write(chunk)
-        
-
-        logs_path = base_path / "logs.log"
-        if not logs_path.exists():
-            logs_path.touch()
-            print("[+] Log file 'logs.log' created.")
-
-    except OSError as e:
-        print(f"[!] Failed to setup directories: {e}")
-        raise
 else:
-    print(f"[!] Directory '{base_path}' already exists and is not empty. Skipping...")
+    print(f"[!] Directory '{BASE_PATH}' already exists and is not empty. Skipping...")
 
 print("[+] Data directory and app data created")
+
+# Static Setup 
+print(f"[-] Checking for directory: {STATIC_PATH}...")
+STATIC_PATH.mkdir(parents=True, exist_ok=True)
+print(f"[+] Directory '{STATIC_PATH}' checked/created.")
+
+GITHUB_RELEASE_URL = "путь до репы"
+
+try:
+    print(f"[-] Downloading frontend build from {GITHUB_RELEASE_URL}...")
+    r = requests.get(GITHUB_RELEASE_URL, timeout=60)
+    r.raise_for_status()
+
+    with zipfile.ZipFile(io.BytesIO(r.content)) as z:
+        z.extractall(STATIC_PATH)
+
+    print(f"[+] Frontend build extracted to '{STATIC_PATH}'.")
+
+except Exception as e:
+    print(f"[!] Failed to download or extract frontend: {e}")

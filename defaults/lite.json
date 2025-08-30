@@ -1,0 +1,18 @@
+{
+  "bells": {
+    "lessons": [],
+    "enabled": true,
+    "weekdays": {
+      "monday": true,
+      "tuesday": true,
+      "wednesday": true,
+      "thursday": true,
+      "friday": true,
+      "saturday": false,
+      "sunday": false
+    }
+  },
+  "announcements": {
+    "ring_sound": null
+  }
+}
