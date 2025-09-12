@@ -1,0 +1,118 @@
+from datetime import date
+from typing import Optional
+from sqlalchemy import select
+import bmaster
+from bmaster import icoms
+from bmaster.database import LocalSession
+from bmaster.icoms.queries import QueryAuthor, SoundQuery
+from bmaster.logs import main_logger
+from bmaster.scheduling import scheduler
+from plugins.school.models import Schedule, ScheduleAssignment, ScheduleLesson, ScheduleOverride
+
+
+logger = main_logger.getChild('school')
+ICOM_ID = 'main'
+
+
+async def start():
+	logger.info('Starting...')
+	from plugins.school.api import router
+	from bmaster.api import api
+	api.include_router(router)
+	bmaster.on_post_start.connect(reschedule_lessons)
+	logger.info('Started')
+
+
+async def get_today_schedule() -> Optional[Schedule]:
+	today = date.today()
+	async with LocalSession() as session:
+		# Get most actual assignment
+		assignment = (await session.execute(
+			select(ScheduleAssignment)
+			.where(ScheduleAssignment.start_date >= today)
+			.order_by(ScheduleAssignment.start_date.desc())
+			.limit(1)
+		)).scalar()
+		# Return if there's no active assignments
+		if assignment is None: return None
+
+		# Get schedule for current weekday in active assignment
+		schedule_id = assignment.get_schedule_id_by_weekday_id(today.weekday())
+		if schedule_id is not None:
+			return await session.get(Schedule, schedule_id)
+
+async def get_today_override() -> Optional[ScheduleOverride]:
+	today = date.today()
+	async with LocalSession() as session:
+		return (await session.execute(
+			select(ScheduleOverride)
+			.where(ScheduleOverride.at == today)
+		)).scalar()
+
+async def on_lesson(lesson_num: int, lesson_info: ScheduleLesson, is_start: bool):
+	sound_name = lesson_info.start_sound if is_start else lesson_info.end_sound
+	# Skip if there's no sound setup
+	if sound_name is None: return
+
+	# Get today override
+	override = await get_today_override()
+	if override is not None:
+		# Return if all lessons or this lesson is muted
+		if override.mute_all_lessons or lesson_num in override.mute_lessons:
+			return
+	
+	SoundQuery(
+		icom=icoms.get(ICOM_ID),
+		sound_name=sound_name,
+		priority=0,
+		force=False,
+		author=QueryAuthor(
+			type='service',
+			name='Звонки'
+		)
+	)
+
+async def reschedule_lessons():
+	logger.info('Rescheduling lessons...')
+
+	# Clear old jobs
+	for job in scheduler.get_jobs(jobstore='temp'):
+		if job.id.startswith('school.lesson'):
+			job.remove()
+	
+	schedule = await get_today_schedule()
+
+	if schedule is None:
+		logger.info('There is no schedule for today, skipping...')
+		return
+
+	
+	for i, lesson in enumerate(schedule.data.lessons):
+		scheduler.add_job(
+			jobstore='temp',
+			id=f'school.lesson.start#{i}',
+			func=on_lesson,
+			trigger='cron',
+			hour=lesson.start_at.hour,
+			minute=lesson.start_at.minute,
+			kwargs={
+				'lesson_num': i,
+				'lesson_info': lesson,
+				'is_start': True
+			}
+		)
+		scheduler.add_job(
+			jobstore='temp',
+			id=f'school.lesson.end#{i}',
+			func=on_lesson,
+			trigger='cron',
+			hour=lesson.end_at.hour,
+			minute=lesson.end_at.minute,
+			kwargs={
+				'lesson_num': i,
+				'lesson_info': lesson,
+				'is_start': False
+			}
+		)
+	
+	logger.info('Lessons rescheduled')
