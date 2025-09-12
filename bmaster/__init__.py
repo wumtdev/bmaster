@@ -1,3 +1,5 @@
+from wsignals import Signal
+
 # init
 import bmaster.plugins
 from bmaster.logs import main_logger
@@ -13,6 +15,8 @@ import bmaster.scripting
 import bmaster.api
 import bmaster.lite
 
+
+on_post_start = Signal()
 
 async def start():
 	main_logger.info('Starting...')
@@ -34,6 +38,8 @@ async def start():
 	await bmaster.database.update_models()
 	
 	main_logger.info('Started')
+
+	on_post_start.call()
 
 async def stop():
 	main_logger.info("Stopping...")
