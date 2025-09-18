@@ -107,6 +107,16 @@ async def get_schedule_assignments() -> List[ScheduleAssignmentInfo]:
 		assignments = (await session.execute(select(ScheduleAssignment))).scalars()
 	return map(ScheduleAssignment.get_info, assignments)
 
+@router.get('/assignments/query')
+async def get_schedule_assignments_by_date_range(start_date: date, end_date: date) -> List[ScheduleAssignmentInfo]:
+	async with LocalSession() as session:
+		assignments = (await session.execute(
+			select(ScheduleAssignment).where(
+				and_(ScheduleAssignment.start_date >= start_date, ScheduleAssignment.start_date <= end_date)
+			)
+		)).scalars()
+	return map(ScheduleAssignment.get_info, assignments)
+
 @router.get('/assignments/{assignment_id}')
 async def get_schedule_assignment(assignment_id: int) -> ScheduleAssignmentInfo:
 	async with LocalSession() as session:
@@ -178,6 +188,16 @@ async def get_schedule_overrides() -> List[ScheduleOverrideInfo]:
 		overrides = (await session.execute(select(ScheduleOverride))).scalars()
 	return map(ScheduleOverride.get_info, overrides)
 
+@router.get('/overrides/query')
+async def get_schedule_overrides_by_date(start_date: date, end_date: date) -> List[ScheduleOverrideInfo]:
+	async with LocalSession() as session:
+		overrides = (await session.execute(
+			select(ScheduleOverride).where(
+				and_(ScheduleOverride.at >= start_date, ScheduleOverride.at <= end_date)
+			)
+		)).scalars()
+	return map(ScheduleOverride.get_info, overrides)
+
 @router.get('/overrides/{override_id}')
 async def get_schedule_override(override_id: int) -> ScheduleOverrideInfo:
 	async with LocalSession() as session:
@@ -219,14 +239,3 @@ async def delete_schedule_override(override_id: int):
 			if override is None:
 				raise HTTPException(404, 'school.schedule_overrides.not_found')
 			await session.delete(override)
-
-@router.get('/overrides/query')
-async def get_schedule_overrides_by_date(start_date: date, end_date: date) -> List[ScheduleOverrideInfo]:
-	async with LocalSession() as session:
-		result = await session.execute(
-			select(ScheduleOverride).where(
-				and_(ScheduleOverride.at >= start_date, ScheduleOverride.at <= end_date)
-			)
-		)
-		overrides = result.scalars()
-	return list(map(ScheduleOverride.get_info, overrides))
