@@ -47,6 +47,7 @@ class Schedule(Base):
 
 class ScheduleAssignmentInfo(BaseModel):
 	'''`ScheduleAssignment` info snapshot'''
+	id: int
 	start_date: date
 	monday: Optional[int] = None
 	tuesday: Optional[int] = None
@@ -83,6 +84,7 @@ class ScheduleAssignment(Base):
 
 	def get_info(self) -> ScheduleAssignmentInfo:
 		return ScheduleAssignmentInfo(
+			id=self.id,
 			start_date=self.start_date,
 			monday=self.monday,
 			tuesday=self.tuesday,

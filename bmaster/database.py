@@ -109,8 +109,8 @@ class ReprArray(TypeDecorator):
 		return ','.join(map(repr, value)) if value is not None else None
 	
 	def process_result_value(self, value: str | None, dialect):
-		if not value: return None
-		res = map(self.item, value.split(','))
+		if value is None: return None
+		res = map(self.item, value.split(',') if value != '' else [])
 		if self.unique_set:
 			return set(res)
 		return res

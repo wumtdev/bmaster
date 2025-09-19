@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select, and_
 from sqlalchemy.orm.attributes import flag_modified
-from datetime import date
+from datetime import date, timedelta
 
 from bmaster.database import LocalSession
 from plugins.school.models import (
@@ -207,16 +207,70 @@ async def get_schedule_override(override_id: int) -> ScheduleOverrideInfo:
 	return override.get_info()
 
 @router.post('/overrides')
-async def create_schedule_override(req: ScheduleOverrideCreateRequest) -> ScheduleOverrideInfo:
+async def create_schedule_override(req: ScheduleOverrideCreateRequest, end_date: date | None = None) -> ScheduleOverrideInfo | List[ScheduleOverrideInfo]:
+	mute_all_lessons = req.mute_all_lessons
+	mute_lessons = req.mute_lessons
+	deleting = mute_all_lessons == False and not mute_lessons
+	overrides = None
 	async with LocalSession() as session:
 		async with session.begin():
-			override = ScheduleOverride(
-				at=req.at,
-				mute_all_lessons=req.mute_all_lessons,
-				mute_lessons=req.mute_lessons
-			)
-			session.add(override)
-	return override.get_info()
+			if end_date is not None:
+				start_date = req.at
+				overrides = []
+
+				old_overrides = (await session.execute(
+					select(ScheduleOverride)
+					.where(and_(ScheduleOverride.at >= start_date, ScheduleOverride.at <= end_date))
+					.order_by(ScheduleOverride.at)
+				)).scalars()
+				
+				last_old_override: ScheduleOverride | None = next(old_overrides, None)
+
+				cur_date = req.at
+				while cur_date <= end_date:
+					if last_old_override is not None and last_old_override.at == cur_date:
+						if deleting:
+							await session.delete(last_old_override)
+						else:
+							last_old_override.mute_all_lessons = mute_all_lessons
+							last_old_override.mute_lessons = mute_lessons
+						overrides.append(last_old_override)
+
+						last_old_override = next(old_overrides, None)
+					else:
+						override = ScheduleOverride(
+							at=cur_date,
+							mute_all_lessons=mute_all_lessons,
+							mute_lessons=mute_lessons
+						)
+						session.add(override)
+						overrides.append(override)
+					cur_date += timedelta(days=1)
+			else:
+				old_override: ScheduleOverride = (await session.execute(
+					select(ScheduleOverride)
+					.where(ScheduleOverride.at == req.at)
+				)).scalar()
+				if old_override:
+					if deleting:
+						await session.delete(old_override)
+					else:
+						old_override.mute_all_lessons = mute_all_lessons
+						old_override.mute_lessons = mute_lessons
+					overrides = old_override
+				elif not deleting:
+					override = ScheduleOverride(
+						at=req.at,
+						mute_all_lessons=req.mute_all_lessons,
+						mute_lessons=req.mute_lessons
+					)
+					session.add(override)
+					overrides = override
+	
+	if type(overrides) is list:
+		return map(ScheduleOverride.get_info, overrides)
+	elif overrides is not None:
+		return overrides.get_info()
 
 @router.patch('/overrides/{override_id}')
 async def update_schedule_override(override_id: int, req: ScheduleOverrideUpdateRequest) -> ScheduleOverrideInfo:
