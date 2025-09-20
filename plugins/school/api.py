@@ -117,6 +117,20 @@ async def get_schedule_assignments_by_date_range(start_date: date, end_date: dat
 		)).scalars()
 	return map(ScheduleAssignment.get_info, assignments)
 
+@router.get('/assignments/active')
+async def get_active_assignment(at: date | None = None) -> ScheduleAssignmentInfo | None:
+	async with LocalSession() as session:
+		# Get most actual assignment
+		assignment: ScheduleAssignment | None = (await session.execute(
+			select(ScheduleAssignment)
+			.where(ScheduleAssignment.start_date <= (at or date.today()))
+			.order_by(ScheduleAssignment.start_date.desc())
+			.limit(1)
+		)).scalar()
+	
+	if assignment is None: return None
+	return assignment.get_info()
+
 @router.get('/assignments/{assignment_id}')
 async def get_schedule_assignment(assignment_id: int) -> ScheduleAssignmentInfo:
 	async with LocalSession() as session:

@@ -29,7 +29,7 @@ async def get_today_schedule() -> Optional[Schedule]:
 		# Get most actual assignment
 		assignment = (await session.execute(
 			select(ScheduleAssignment)
-			.where(ScheduleAssignment.start_date >= today)
+			.where(ScheduleAssignment.start_date <= today)
 			.order_by(ScheduleAssignment.start_date.desc())
 			.limit(1)
 		)).scalar()
