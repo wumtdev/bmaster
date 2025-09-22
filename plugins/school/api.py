@@ -168,8 +168,8 @@ async def update_schedule_assignment(assignment_id: int, req: ScheduleAssignment
 				assignment.start_date = req.start_date
 			for day in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']:
 				val = getattr(req, day)
-				if val is not None:
-					setattr(assignment, day, val)
+				# if val is not None:
+				setattr(assignment, day, val)
 	await reschedule_lessons()
 	return assignment.get_info()
 
