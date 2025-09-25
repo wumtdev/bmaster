@@ -33,6 +33,20 @@ async def get_schedules() -> List[ScheduleInfo]:
 		schedules = (await session.execute(select(Schedule))).scalars()
 	return map(Schedule.get_info, schedules)
 
+@router.post('/schedules/dupe/{schedule_id}')
+async def dupe_schedule(schedule_id: int) -> ScheduleInfo:
+	async with LocalSession() as session:
+		async with session.begin():
+			schedule: Optional[Schedule] = await session.get(Schedule, schedule_id)
+			if schedule is None:
+				raise HTTPException(404, 'school.schedules.not_found')
+			new_schedule = Schedule(
+				name='copy '+schedule.name,
+				data=schedule.data
+			)
+			session.add(new_schedule)
+	return new_schedule.get_info()
+
 @router.get('/schedules/{schedule_id}')
 async def get_schedule(schedule_id: int) -> ScheduleInfo:
 	async with LocalSession() as session:
@@ -75,7 +89,7 @@ async def delete_schedule(schedule_id: int):
 			schedule = await session.get(Schedule, schedule_id)
 			if schedule is None:
 				raise HTTPException(404, 'school.schedules.not_found')
-			session.delete(schedule)
+			await session.delete(schedule)
 	await reschedule_lessons()
 
 
@@ -221,7 +235,7 @@ async def get_schedule_override(override_id: int) -> ScheduleOverrideInfo:
 	return override.get_info()
 
 @router.post('/overrides')
-async def create_schedule_override(req: ScheduleOverrideCreateRequest, end_date: date | None = None) -> ScheduleOverrideInfo | List[ScheduleOverrideInfo]:
+async def create_schedule_override(req: ScheduleOverrideCreateRequest, end_date: date | None = None) -> ScheduleOverrideInfo | List[ScheduleOverrideInfo] | None:
 	mute_all_lessons = req.mute_all_lessons
 	mute_lessons = req.mute_lessons
 	deleting = mute_all_lessons == False and not mute_lessons
