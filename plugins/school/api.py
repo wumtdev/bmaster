@@ -1,5 +1,6 @@
+import json
 from typing import List, Optional, Set
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, File, HTTPException, Response, UploadFile
 from pydantic import BaseModel
 from sqlalchemy import select, and_
 from sqlalchemy.orm.attributes import flag_modified
@@ -321,3 +322,53 @@ async def delete_schedule_override(override_id: int):
 			if override is None:
 				raise HTTPException(404, 'school.schedule_overrides.not_found')
 			await session.delete(override)
+
+
+
+class SchoolSettings(BaseModel):
+	schedules: list[ScheduleInfo] | None = None
+	assignments: list[ScheduleAssignmentInfo] | None = None
+	overrides: list[ScheduleOverrideInfo] | None = None
+
+@router.get('/settings')
+async def export_settings(schedules: bool = False, assignments: bool = False, overrides: bool = False):
+	result = SchoolSettings()
+	
+	async with LocalSession() as session:
+		
+		if schedules:
+			schedules_q = (await session.execute(select(Schedule))).scalars()
+			result.schedules = list(map(Schedule.get_info, schedules_q))
+
+		if assignments:
+			assignments_q = (await session.execute(select(ScheduleAssignment))).scalars()
+			result.assignments = list(map(ScheduleAssignment.get_info, assignments_q))
+
+		if overrides:
+			overrides_q = (await session.execute(select(ScheduleOverride))).scalars()
+			result.overrides = list(map(ScheduleOverride.get_info, overrides_q))
+
+	return Response(
+		content=result.model_dump_json(),
+		media_type="application/json",
+		headers={"Content-Disposition": "attachment; filename=school.json"}
+	)
+
+# @router.post('/settings')
+# async def import_settings(file: UploadFile):
+# 	settings = SchoolSettings.model_validate_json((await file.read()).decode('utf-8'))
+	
+# 	async with LocalSession() as session:
+# 		async with session.begin():
+# 		if settings.schedules:
+# 			schedules_q = (await session.execute(select(Schedule))).scalars()
+# 			result['schedules'] = map(schedules_q, Schedule.get_info)
+
+# 		if settings.assignments:
+# 			assignments_q = (await session.execute(select(ScheduleAssignment))).scalars()
+# 			result['assignments'] = map(assignments_q, ScheduleAssignment.get_info)
+
+# 		if settings.overrides:
+# 			overrides_q = (await session.execute(select(ScheduleOverride))).scalars()
+# 			result['assignments'] = map(overrides_q, ScheduleOverride.get_info)
+	
