@@ -2,7 +2,7 @@ import json
 from typing import List, Optional, Set
 from fastapi import APIRouter, File, HTTPException, Response, UploadFile
 from pydantic import BaseModel
-from sqlalchemy import select, and_
+from sqlalchemy import delete, select, and_
 from sqlalchemy.orm.attributes import flag_modified
 from datetime import date, timedelta
 
@@ -354,21 +354,24 @@ async def export_settings(schedules: bool = False, assignments: bool = False, ov
 		headers={"Content-Disposition": "attachment; filename=school.json"}
 	)
 
-# @router.post('/settings')
-# async def import_settings(file: UploadFile):
-# 	settings = SchoolSettings.model_validate_json((await file.read()).decode('utf-8'))
+@router.post('/settings')
+async def import_settings(file: UploadFile):
+	settings = SchoolSettings.model_validate_json((await file.read()).decode('utf-8'))
 	
-# 	async with LocalSession() as session:
-# 		async with session.begin():
-# 		if settings.schedules:
-# 			schedules_q = (await session.execute(select(Schedule))).scalars()
-# 			result['schedules'] = map(schedules_q, Schedule.get_info)
+	async with LocalSession() as session:
+		async with session.begin():
+			await session.execute(delete(Schedule))
+			await session.execute(delete(ScheduleAssignment))
+			await session.execute(delete(ScheduleOverride))
 
-# 		if settings.assignments:
-# 			assignments_q = (await session.execute(select(ScheduleAssignment))).scalars()
-# 			result['assignments'] = map(assignments_q, ScheduleAssignment.get_info)
+			if schedules := settings.schedules:
+				for info in schedules:
+					session.add(Schedule.from_info(info))
 
-# 		if settings.overrides:
-# 			overrides_q = (await session.execute(select(ScheduleOverride))).scalars()
-# 			result['assignments'] = map(overrides_q, ScheduleOverride.get_info)
-	
+			if assignments := settings.assignments:
+				for info in assignments:
+					session.add(ScheduleAssignment.from_info(info))
+
+			if overrides := settings.overrides:
+				for info in overrides:
+					session.add(ScheduleOverride.from_info(info))

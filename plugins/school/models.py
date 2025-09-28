@@ -1,5 +1,5 @@
 from datetime import date
-from typing import List, Optional, Set
+from typing import List, Optional, Self, Set
 from sqlalchemy import Boolean, Date, ForeignKey, Integer, Text
 from sqlalchemy.orm import Mapped, mapped_column
 from pydantic import BaseModel
@@ -40,6 +40,13 @@ class Schedule(Base):
 			id=self.id,
 			name=self.name,
 			lessons=self.data.lessons
+		)
+
+	def from_info(info: ScheduleInfo) -> Self:
+		return Schedule(
+			id=info.id,
+			name=info.name,
+			data=ScheduleData(lessons=info.lessons)
 		)
 
 
@@ -95,6 +102,19 @@ class ScheduleAssignment(Base):
 			sunday=self.sunday
 		)
 
+	def from_info(info: ScheduleAssignmentInfo) -> Self:
+		return ScheduleAssignment(
+			id=info.id,
+			start_date=info.start_date,
+			monday=info.monday,
+			tuesday=info.tuesday,
+			wednesday=info.wednesday,
+			thursday=info.thursday,
+			friday=info.friday,
+			saturday=info.saturday,
+			sunday=info.sunday
+		)
+
 
 # SCHEDULE OVERRIDE
 
@@ -120,4 +140,12 @@ class ScheduleOverride(Base):
 			at=self.at,
 			mute_all_lessons=self.mute_all_lessons,
 			mute_lessons=self.mute_lessons
+		)
+
+	def from_info(info: ScheduleOverrideInfo) -> Self:
+		return ScheduleOverride(
+			id=info.id,
+			at=info.at,
+			mute_all_lessons=info.mute_all_lessons,
+			mute_lessons=info.mute_lessons
 		)
