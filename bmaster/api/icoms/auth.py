@@ -24,7 +24,9 @@ async def has_icom_permissions(icom: icoms.Icom, user_or_roles: Account | int | 
 	from bmaster.database import LocalSession
 	async with LocalSession() as session, session.begin():
 		if type(user_or_roles) == int:
-			user_or_roles = (await session.get(Account, user_or_roles)).roles
+			account = await session.get(Account, user_or_roles)
+			if not account: return False
+			user_or_roles = account.roles
 		roles: list[Role] = user_or_roles
 		
 		for role in roles:

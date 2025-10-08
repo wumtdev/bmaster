@@ -87,7 +87,7 @@ class TextArray(TypeDecorator):
 		return ','.join(value) if value is not None else None
 	
 	def process_result_value(self, value: str | None, dialect):
-		if not value: return None
+		if value is None: return None
 		res = value.split(',')
 		if self.unique_set:
 			return set(res)

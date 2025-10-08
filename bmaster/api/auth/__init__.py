@@ -120,7 +120,13 @@ def require_auth_token(jwt_data: Annotated[Any, Depends(require_bearer_jwt)]):
 	return token
 
 async def require_user(auth_token: Annotated[AuthToken, Depends(require_auth_token)]) -> User:
-	return await auth_token.get_user()
+	user = await auth_token.get_user()
+	if not user:
+		raise HTTPException(
+			status.HTTP_401_UNAUTHORIZED, 'bmaster.auth.invalid_token',
+			headers={'WWW-Authenticate': 'Bearer'}
+		)
+	return user
 
 def require_permissions(*permissions: str):
 	def _check(user: Annotated[User, Depends(require_user)]):
@@ -208,7 +214,14 @@ def validate_username(name: str):
 Username = Annotated[str, AfterValidator(validate_username)]
 
 
-@api.get('/accounts/{user_id}', tags=['auth'])
+@api.get('/auth/accounts', tags=['auth'])
+async def get_accounts() -> list[AccountInfo]:
+	from bmaster.database import LocalSession
+	async with LocalSession() as session:
+		accounts = (await session.execute(select(Account))).unique().scalars()
+	return map(Account.get_info, accounts)
+
+@api.get('/auth/accounts/{user_id}', tags=['auth'])
 async def get_account(user_id: int) -> AccountInfo:
 	from bmaster.database import LocalSession
 	async with LocalSession() as session:
@@ -224,7 +237,7 @@ class AccountCreateRequest(BaseModel):
 	password: str
 	role_ids: set[int] = Field(default_factory=lambda: set())
 
-@api.post('/accounts', tags=['auth'])
+@api.post('/auth/accounts', tags=['auth'])
 async def create_account(req: AccountCreateRequest) -> AccountInfo:
 	from bmaster.database import LocalSession
 	user = Account(
@@ -247,7 +260,7 @@ class AccountUpdateRequest(BaseModel):
 	password: Optional[str] = None
 	role_ids: Optional[set[int]] = None
 
-@api.patch('/accounts/{user_id}', tags=['auth'])
+@api.patch('/auth/accounts/{user_id}', tags=['auth'])
 async def update_account(user_id: int, req: AccountUpdateRequest) -> AccountInfo:
 	from bmaster.database import LocalSession
 	async with LocalSession() as session, session.begin():
@@ -265,7 +278,7 @@ async def update_account(user_id: int, req: AccountUpdateRequest) -> AccountInfo
 		if new_password is not None: user.set_password(new_password)
 	return user.get_info()
 
-@api.delete('/accounts/{user_id}', tags=['auth'])
+@api.delete('/auth/accounts/{user_id}', tags=['auth'])
 async def delete_account(user_id: int):
 	from bmaster.database import LocalSession
 	async with LocalSession() as session, session.begin():
@@ -296,7 +309,7 @@ class RoleCreateRequest(BaseModel):
 	permissions: set[str] = Field(default_factory=lambda: set())
 
 @api.post('/auth/roles', tags=['auth'])
-async def get_role(req: RoleCreateRequest) -> RoleInfo:
+async def create_role(req: RoleCreateRequest) -> RoleInfo:
 	from bmaster.database import LocalSession
 	role = Role(
 		name=req.name,
