@@ -23,18 +23,11 @@ if not BASE_PATH.exists() or not any(BASE_PATH.iterdir()):
 	# config.yml
 	config_path = BASE_PATH / "config.yml"
 	if not config_path.exists() and DEFAULT_CONFIG_FILE.exists():
-		config_data = yaml.safe_load(DEFAULT_CONFIG_FILE.read_text(encoding="utf-8"))
-		if "auth" in config_data and "jwt" in config_data["auth"]:
-			config_data["auth"]["jwt"]["secret_key"] = secrets.token_hex(32)
+		config_text = DEFAULT_CONFIG_FILE.read_text(encoding="utf-8")
+		config_text.replace('$auth.jwt.secret_key', secrets.token_hex(32))
 
 		with config_path.open("w", encoding="utf-8") as f:
-			yaml.safe_dump(
-				config_data,
-				f,
-				allow_unicode=True,
-				sort_keys=False,
-				default_flow_style=False,
-			)
+			f.write(config_text)
 		print("[+] Config file 'config.yml' created.")
 
 	# logs.log

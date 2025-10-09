@@ -1,6 +1,7 @@
 from wsignals import Signal
 
 # init
+from bmaster import configroles
 import bmaster.plugins
 from bmaster.logs import main_logger
 
@@ -39,6 +40,7 @@ async def start():
 	
 	main_logger.info('Started')
 
+	on_post_start.connect(configroles.create_config_roles)
 	on_post_start.call()
 
 async def stop():
