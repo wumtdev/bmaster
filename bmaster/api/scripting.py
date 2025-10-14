@@ -1,9 +1,10 @@
 import asyncio
 from typing import Optional
-from fastapi import HTTPException, status
+from fastapi import Depends, HTTPException, status
 from pydantic import BaseModel, Field, SerializeAsAny
 from sqlalchemy import select
 
+from bmaster.api.auth import require_permissions
 from bmaster.scheduling import JobTrigger
 from bmaster.scripting import BaseScript, Script, ScriptData, ScriptTask, ScriptTaskInfo, ScriptInfo
 from bmaster.api import api
@@ -28,7 +29,9 @@ class ScriptCreateRequest(BaseModel):
 	name: str
 	script: BaseScript
 
-@api.post('/scripting/scripts', tags=['scripting'])
+@api.post('/scripting/scripts', tags=['scripting'], dependencies=[
+	Depends(require_permissions('bmaster.scripting.manage'))
+])
 async def create_script(req: ScriptCreateRequest) -> ScriptInfo:
 	from bmaster.database import LocalSession
 	script = Script(
@@ -41,7 +44,9 @@ async def create_script(req: ScriptCreateRequest) -> ScriptInfo:
 		session.add(script)
 	return script.get_info()
 
-@api.delete('/scripting/scripts/{script_id}', tags=['scripting'])
+@api.delete('/scripting/scripts/{script_id}', tags=['scripting'], dependencies=[
+	Depends(require_permissions('bmaster.scripting.manage'))
+])
 async def delete_script(script_id: int):
 	from bmaster.database import LocalSession
 	async with LocalSession() as session, session.begin():
@@ -53,7 +58,9 @@ class ScriptUpdateRequest(BaseModel):
 	name: Optional[str] = None
 	script: Optional[BaseScript] = None
 
-@api.patch('/scripting/scripts/{script_id}', tags=['scripting'])
+@api.patch('/scripting/scripts/{script_id}', tags=['scripting'], dependencies=[
+	Depends(require_permissions('bmaster.scripting.manage'))
+])
 async def update_script(script_id: int, req: ScriptUpdateRequest) -> ScriptInfo:
 	from bmaster.database import LocalSession
 	async with LocalSession() as session, session.begin():
@@ -67,7 +74,9 @@ async def update_script(script_id: int, req: ScriptUpdateRequest) -> ScriptInfo:
 	
 	return script.get_info()
 
-@api.get('/scripting/scripts/execute/{script_id}', tags=['scripting'])
+@api.get('/scripting/scripts/execute/{script_id}', tags=['scripting'], dependencies=[
+	Depends(require_permissions('bmaster.scripting.execute'))
+])
 async def execute_script(script_id: int):
 	from bmaster.database import LocalSession
 	async with LocalSession() as session, session.begin():
@@ -97,7 +106,9 @@ class ScriptTaskCreateRequest(BaseModel):
 	trigger: SerializeAsAny[JobTrigger]
 	tags: set[str] = Field(default_factory=lambda: set())
 
-@api.post('/scripting/tasks', tags=['scripting'])
+@api.post('/scripting/tasks', tags=['scripting'], dependencies=[
+	Depends(require_permissions('bmaster.scripting.manage'))
+])
 async def create_task(req: ScriptTaskCreateRequest) -> ScriptTaskInfo:
 	from bmaster.database import LocalSession
 	task = ScriptTask(tags=req.tags, trigger=req.trigger)
@@ -114,7 +125,9 @@ async def create_task(req: ScriptTaskCreateRequest) -> ScriptTaskInfo:
 	task.post_create()
 	return task.get_info()
 
-@api.delete('/scripting/tasks/{task_id}', tags=['scripting'])
+@api.delete('/scripting/tasks/{task_id}', tags=['scripting'], dependencies=[
+	Depends(require_permissions('bmaster.scripting.manage'))
+])
 async def delete_task(task_id: int):
 	from bmaster.database import LocalSession
 	async with LocalSession() as session, session.begin():
@@ -128,7 +141,9 @@ class ScriptTaskUpdateRequest(BaseModel):
 	trigger: Optional[SerializeAsAny[JobTrigger]] = None
 	tags: Optional[set[str]] = None
 
-@api.patch('/scripting/tasks/{task_id}', tags=['scripting'])
+@api.patch('/scripting/tasks/{task_id}', tags=['scripting'], dependencies=[
+	Depends(require_permissions('bmaster.scripting.manage'))
+])
 async def update_task(task_id: int, req: ScriptTaskUpdateRequest) -> ScriptTaskInfo:
 	from bmaster.database import LocalSession
 	async with LocalSession() as session, session.begin():

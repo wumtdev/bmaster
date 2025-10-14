@@ -1,6 +1,7 @@
 from uuid import UUID
-from fastapi import HTTPException
+from fastapi import Depends, HTTPException
 
+from bmaster.api.auth import require_permissions
 from bmaster.api.auth.users import User, UserInfo
 import bmaster.icoms as icoms
 from bmaster import icoms
@@ -38,7 +39,9 @@ async def get_query(id: str) -> icoms.QueryInfo:
 	if not query: raise QueryNotFound(id)
 	return query.get_info()
 
-@api.delete('/queries/{id}', tags=['queries'])
+@api.delete('/queries/{id}', tags=['queries'], dependencies=[
+	Depends(require_permissions('bmaster.icoms.queue.manage'))
+])
 async def cancel_query(id: str) -> icoms.QueryInfo:
 	query = icoms.queries.get_by_id(UUID(id))
 	if not query: raise QueryNotFound(id)

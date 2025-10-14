@@ -28,5 +28,22 @@ roles:
   roles:
     user:
       - bmaster.icoms.read
+      - bmaster.school.manage
+      - bmaster.sounds.manage
+      - bmaster.icoms.queue.manage
+      - bmaster.icoms.queries.audio
+      - bmaster.icoms.queries.sound
+      - bmaster.icoms.queries.stream
+
     admin:
       - bmaster.icoms.read
+      - bmaster.school.manage
+      - bmaster.sounds.manage
+      - bmaster.icoms.queue.manage
+      - bmaster.icoms.queries.audio
+      - bmaster.icoms.queries.sound
+      - bmaster.icoms.queries.stream
+
+      - bmaster.accounts.manage
+      - bmaster.roles.manage
+      - bmaster.scripting.manage
