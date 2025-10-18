@@ -46,7 +46,7 @@ print(f"[-] Checking for directory: {STATIC_PATH}...")
 STATIC_PATH.mkdir(parents=True, exist_ok=True)
 print(f"[+] Directory '{STATIC_PATH}' checked/created.")
 
-GITHUB_RELEASE_URL = "путь до последнего релиза(zip)"
+GITHUB_RELEASE_URL = "https://github.com/wumtdev/bmaster-lite/releases/latest/download/build.zip"
 
 try:
 	print(f"[-] Downloading frontend build from {GITHUB_RELEASE_URL}...")
