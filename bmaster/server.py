@@ -94,7 +94,7 @@ async def start():
 
 
 # Serve static files from React build
-app.mount('/static', StaticFiles(directory='static'), name='static')
+app.mount('/assets', StaticFiles(directory='static/assets'), name='assets')
 index_path = Path('static/index.html')
 
 
