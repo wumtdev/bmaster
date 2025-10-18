@@ -1,11 +1,12 @@
 import json
-from typing import List, Optional, Set
-from fastapi import APIRouter, File, HTTPException, Response, UploadFile
+from typing import Annotated, List, Optional, Set
+from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile
 from pydantic import BaseModel
 from sqlalchemy import delete, select, and_
 from sqlalchemy.orm.attributes import flag_modified
 from datetime import date, timedelta
 
+from bmaster.api.auth import require_permissions
 from bmaster.database import LocalSession
 from plugins.school.models import (
 	Schedule, ScheduleData, ScheduleInfo, ScheduleLesson,
@@ -34,7 +35,9 @@ async def get_schedules() -> List[ScheduleInfo]:
 		schedules = (await session.execute(select(Schedule))).scalars()
 	return map(Schedule.get_info, schedules)
 
-@router.post('/schedules/dupe/{schedule_id}')
+@router.post('/schedules/dupe/{schedule_id}', dependencies=[
+	Depends(require_permissions('school.manage'))
+])
 async def dupe_schedule(schedule_id: int) -> ScheduleInfo:
 	async with LocalSession() as session:
 		async with session.begin():
@@ -55,7 +58,9 @@ async def get_schedule(schedule_id: int) -> ScheduleInfo:
 	if schedule is None: raise HTTPException(404, 'school.schedules.not_found')
 	return schedule.get_info()
 
-@router.post('/schedules')
+@router.post('/schedules', dependencies=[
+	Depends(require_permissions('school.manage'))
+])
 async def create_schedule(req: ScheduleCreateRequest) -> ScheduleInfo:
 	async with LocalSession() as session:
 		async with session.begin():
@@ -68,7 +73,9 @@ async def create_schedule(req: ScheduleCreateRequest) -> ScheduleInfo:
 			session.add(schedule)
 	return schedule.get_info()
 
-@router.patch('/schedules/{schedule_id}')
+@router.patch('/schedules/{schedule_id}', dependencies=[
+	Depends(require_permissions('school.manage'))
+])
 async def update_schedule(schedule_id: int, req: ScheduleUpdateRequest) -> ScheduleInfo:
 	async with LocalSession() as session:
 		async with session.begin():
@@ -83,7 +90,9 @@ async def update_schedule(schedule_id: int, req: ScheduleUpdateRequest) -> Sched
 	await reschedule_lessons()
 	return schedule.get_info()
 
-@router.delete('/schedules/{schedule_id}')
+@router.delete('/schedules/{schedule_id}', dependencies=[
+	Depends(require_permissions('school.manage'))
+])
 async def delete_schedule(schedule_id: int):
 	async with LocalSession() as session:
 		async with session.begin():
@@ -154,7 +163,9 @@ async def get_schedule_assignment(assignment_id: int) -> ScheduleAssignmentInfo:
 		raise HTTPException(404, 'school.schedule_assignments.not_found')
 	return assignment.get_info()
 
-@router.post('/assignments')
+@router.post('/assignments', dependencies=[
+	Depends(require_permissions('school.manage'))
+])
 async def create_schedule_assignment(req: ScheduleAssignmentCreateRequest) -> ScheduleAssignmentInfo:
 	async with LocalSession() as session:
 		async with session.begin():
@@ -172,7 +183,9 @@ async def create_schedule_assignment(req: ScheduleAssignmentCreateRequest) -> Sc
 	await reschedule_lessons()
 	return assignment.get_info()
 
-@router.patch('/assignments/{assignment_id}')
+@router.patch('/assignments/{assignment_id}', dependencies=[
+	Depends(require_permissions('school.manage'))
+])
 async def update_schedule_assignment(assignment_id: int, req: ScheduleAssignmentUpdateRequest) -> ScheduleAssignmentInfo:
 	async with LocalSession() as session:
 		async with session.begin():
@@ -188,7 +201,9 @@ async def update_schedule_assignment(assignment_id: int, req: ScheduleAssignment
 	await reschedule_lessons()
 	return assignment.get_info()
 
-@router.delete('/assignments/{assignment_id}')
+@router.delete('/assignments/{assignment_id}', dependencies=[
+	Depends(require_permissions('school.manage'))
+])
 async def delete_schedule_assignment(assignment_id: int):
 	async with LocalSession() as session:
 		async with session.begin():
@@ -235,7 +250,9 @@ async def get_schedule_override(override_id: int) -> ScheduleOverrideInfo:
 		raise HTTPException(404, 'school.schedule_overrides.not_found')
 	return override.get_info()
 
-@router.post('/overrides')
+@router.post('/overrides', dependencies=[
+	Depends(require_permissions('school.manage'))
+])
 async def create_schedule_override(req: ScheduleOverrideCreateRequest, end_date: date | None = None) -> ScheduleOverrideInfo | List[ScheduleOverrideInfo] | None:
 	mute_all_lessons = req.mute_all_lessons
 	mute_lessons = req.mute_lessons
@@ -301,7 +318,9 @@ async def create_schedule_override(req: ScheduleOverrideCreateRequest, end_date:
 	elif overrides is not None:
 		return overrides.get_info()
 
-@router.patch('/overrides/{override_id}')
+@router.patch('/overrides/{override_id}', dependencies=[
+	Depends(require_permissions('school.manage'))
+])
 async def update_schedule_override(override_id: int, req: ScheduleOverrideUpdateRequest) -> ScheduleOverrideInfo:
 	async with LocalSession() as session:
 		async with session.begin():
@@ -314,7 +333,9 @@ async def update_schedule_override(override_id: int, req: ScheduleOverrideUpdate
 				override.mute_lessons = req.mute_lessons
 	return override.get_info()
 
-@router.delete('/overrides/{override_id}')
+@router.delete('/overrides/{override_id}', dependencies=[
+	Depends(require_permissions('school.manage'))
+])
 async def delete_schedule_override(override_id: int):
 	async with LocalSession() as session:
 		async with session.begin():
@@ -354,7 +375,9 @@ async def export_settings(schedules: bool = False, assignments: bool = False, ov
 		headers={"Content-Disposition": "attachment; filename=school.json"}
 	)
 
-@router.post('/settings')
+@router.post('/settings', dependencies=[
+	Depends(require_permissions('school.manage'))
+])
 async def import_settings(file: UploadFile):
 	settings = SchoolSettings.model_validate_json((await file.read()).decode('utf-8'))
 	

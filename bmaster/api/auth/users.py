@@ -82,7 +82,7 @@ class Account(Base):
 		return perms
 
 	def has_permissions(self, *permissions: str) -> bool:
-		return not set(permissions).difference_update(self.permissions)
+		return not set(permissions).difference(self.permissions)
 	
 	def get_label(self) -> str:
 		return f'<User "{self.name}" #{self.id}>'

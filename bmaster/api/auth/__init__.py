@@ -131,7 +131,7 @@ async def require_user(auth_token: Annotated[AuthToken, Depends(require_auth_tok
 def require_permissions(*permissions: str):
 	def _check(user: Annotated[User, Depends(require_user)]):
 		if not user.has_permissions(*permissions):
-			raise HTTPException(status.HTTP_403_FORBIDDEN, 'Not enough permissions')
+			raise HTTPException(status.HTTP_403_FORBIDDEN, 'bmaster.auth.missing_permissions')
 	return _check
 
 async def start():
@@ -237,7 +237,7 @@ class AccountCreateRequest(BaseModel):
 	password: str
 	role_ids: set[int] = Field(default_factory=lambda: set())
 
-@api.post('/auth/accounts', tags=['auth'])
+@api.post('/auth/accounts', tags=['auth'], dependencies=[Depends(require_permissions('bmaster.accounts.manage'))])
 async def create_account(req: AccountCreateRequest) -> AccountInfo:
 	from bmaster.database import LocalSession
 	user = Account(
@@ -260,7 +260,11 @@ class AccountUpdateRequest(BaseModel):
 	password: Optional[str] = None
 	role_ids: Optional[set[int]] = None
 
-@api.patch('/auth/accounts/{user_id}', tags=['auth'])
+@api.patch(
+	'/auth/accounts/{user_id}',
+	tags=['auth'],
+	dependencies=[Depends(require_permissions('bmaster.accounts.manage'))]
+)
 async def update_account(user_id: int, req: AccountUpdateRequest) -> AccountInfo:
 	from bmaster.database import LocalSession
 	async with LocalSession() as session, session.begin():
@@ -278,7 +282,9 @@ async def update_account(user_id: int, req: AccountUpdateRequest) -> AccountInfo
 		if new_password is not None: user.set_password(new_password)
 	return user.get_info()
 
-@api.delete('/auth/accounts/{user_id}', tags=['auth'])
+@api.delete('/auth/accounts/{user_id}', tags=['auth'],
+	dependencies=[Depends(require_permissions('bmaster.accounts.manage'))]
+)
 async def delete_account(user_id: int):
 	from bmaster.database import LocalSession
 	async with LocalSession() as session, session.begin():
@@ -308,7 +314,9 @@ class RoleCreateRequest(BaseModel):
 	name: str
 	permissions: set[str] = Field(default_factory=lambda: set())
 
-@api.post('/auth/roles', tags=['auth'])
+@api.post('/auth/roles', tags=['auth'], dependencies=[
+	Depends(require_permissions('bmaster.roles.manage'))
+])
 async def create_role(req: RoleCreateRequest) -> RoleInfo:
 	from bmaster.database import LocalSession
 	role = Role(
@@ -317,4 +325,40 @@ async def create_role(req: RoleCreateRequest) -> RoleInfo:
 	)
 	async with LocalSession() as session, session.begin():
 		session.add(role)
+	return role.get_info()
+
+class RoleUpdateRequest(BaseModel):
+	name: Optional[str] = None
+	permissions: set[str] = Field(default_factory=lambda: set())
+
+@api.patch('/auth/roles/{role_id}', tags=['auth'], dependencies=[
+	Depends(require_permissions('bmaster.roles.manage'))
+])
+async def update_role(req: RoleUpdateRequest, role_id: int) -> RoleInfo:
+	from bmaster.database import LocalSession
+	
+	async with LocalSession() as session, session.begin():
+		role = session.get(Role, role_id)
+		if not role:
+			raise HTTPException(status.HTTP_404_NOT_FOUND, 'Role not found')
+		
+		if req.name is not None:
+			role.name = req.name
+		if req.permissions is not None:
+			role.permissions = req.permissions
+	
+	return role.get_info()
+
+@api.delete('/auth/roles/{role_id}', tags=['auth'], dependencies=[
+	Depends(require_permissions('bmaster.roles.manage'))
+])
+async def delete_role(role_id: int) -> RoleInfo:
+	from bmaster.database import LocalSession
+	
+	async with LocalSession() as session, session.begin():
+		role = session.get(Role, role_id)
+		if not role:
+			raise HTTPException(status.HTTP_404_NOT_FOUND, 'Role not found')
+		await session.delete(role)
+	
 	return role.get_info()

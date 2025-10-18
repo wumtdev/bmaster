@@ -1,11 +1,10 @@
-from fastapi import WebSocket, WebSocketDisconnect
-from fastapi.websockets import WebSocketState
+from fastapi import Depends, WebSocket, WebSocketDisconnect
 import numpy as np
 from pydantic import BaseModel, ValidationError
-from wauxio import AudioReader, Audio, StreamData
+from wauxio import Audio, StreamData
 from wauxio.utils import AudioStack
 
-from bmaster.server import app
+from bmaster.api.auth import require_permissions
 import bmaster.icoms as icoms
 from bmaster.icoms import Icom
 from bmaster.icoms.queries import PlayOptions, Query, QueryStatus
@@ -46,7 +45,9 @@ class APIStreamQuery(Query):
 	def stop(self):
 		super().stop()
 
-@api.websocket('/queries/stream')
+@api.websocket('/queries/stream', dependencies=[
+	Depends(require_permissions('bmaster.icoms.queries.stream'))
+])
 async def play_stream(ws: WebSocket):
 	await ws.accept()
 	

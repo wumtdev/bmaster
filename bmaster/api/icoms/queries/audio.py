@@ -5,7 +5,7 @@ from fastapi import Depends, File, Form, HTTPException, UploadFile, status
 from wauxio import Audio
 
 from bmaster.api import api
-from bmaster.api.auth import require_user
+from bmaster.api.auth import require_permissions, require_user
 from bmaster.api.auth.users import User
 from bmaster.api.icoms.queries import query_author_from_user
 import bmaster.icoms as icoms
@@ -19,7 +19,9 @@ class APIAudioRequest(BaseModel):
 	rate: int
 	channels: int
 
-@api.post('/queries/audio', tags=['queries'])
+@api.post('/queries/audio', tags=['queries'], dependencies=[
+	Depends(require_permissions('bmaster.icoms.queries.audio'))
+])
 async def play_audio(
 	user: Annotated[User, Depends(require_user)],
 	request: str = Form(..., media_type='application/json'),

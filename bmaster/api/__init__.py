@@ -30,4 +30,4 @@ async def start():
 	api.include_router(sounds.router, prefix='/sounds')
 	app.include_router(api, prefix='/api')
 
-	logger.info('api started')
+	logger.info('Started')

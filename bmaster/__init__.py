@@ -14,7 +14,6 @@ import bmaster.scheduling
 import bmaster.server
 import bmaster.scripting
 import bmaster.api
-import bmaster.lite
 
 
 on_post_start = Signal()
@@ -33,7 +32,6 @@ async def start():
 	await bmaster.plugins.mount_plugins()
 	await bmaster.api.start()
 	await bmaster.server.start()
-	await bmaster.lite.start()
 
 	# POST START
 	await bmaster.database.update_models()
