@@ -174,7 +174,7 @@ class SoundQuery(Query):
 		# mixer.add(player)
 		self.p = playsound3.playsound(f'data/sounds/{self.sound_name}', block=False)
 		loop = asyncio.get_running_loop()
-		create_task(loop.run_in_executor(None, self.wait))
+		loop.run_in_executor(None, self.wait)
 
 	def wait(self):
 		p = self.p
