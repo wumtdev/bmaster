@@ -11,6 +11,7 @@ dependencies = [
     "fastapi>=0.116.1",
     "miniaudio>=1.61",
     "passlib[bcrypt]>=1.7.4",
+    "playsound3>=3.2.8",
     "pyjwt>=2.10.1",
     "python-multipart>=0.0.20",
     "pyyaml>=6.0.2",

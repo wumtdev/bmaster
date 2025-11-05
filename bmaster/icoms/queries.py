@@ -1,3 +1,5 @@
+from asyncio import create_task
+import asyncio
 from dataclasses import dataclass
 from typing import Coroutine, Mapping, Optional, TYPE_CHECKING
 from enum import Enum
@@ -6,6 +8,7 @@ from pydantic import BaseModel
 from wauxio.mixer import AudioMixer
 from wauxio import Audio, AudioReader, AudioReaderType, StreamOptions, StreamData
 from wsignals import Signal
+import playsound3
 
 from bmaster import sounds
 
@@ -145,7 +148,8 @@ class SoundQuery(Query):
 	sound_name: str
 	priority: int
 	force: bool
-	player: Optional[AudioReader] = None
+	# player: Optional[AudioReader] = None
+	p: Optional[playsound3.playsound3.Sound] = None
 
 	def __init__(self, icom: "Icom", sound_name: str, priority: int = 0, force: bool = False, author: Optional[QueryAuthor] = None):
 		self.description = f"Playing sound: '{sound_name}'"
@@ -157,21 +161,31 @@ class SoundQuery(Query):
 
 	def play(self, options: PlayOptions):
 		super().play(options)
-		mixer = options.mixer
+		# mixer = options.mixer
 
-		audio = sounds.storage.get(self.sound_name)
-		if not audio:
+		# audio = sounds.storage.get(self.sound_name)
+		# if not audio:
+		# 	self.finish()
+		# 	return
+		#
+		# player = AudioReader(audio)
+		# self.player = player
+		# player.end.connect(self.finish)
+		# mixer.add(player)
+		self.p = playsound3.playsound(f'data/sounds/{self.sound_name}', block=False)
+		loop = asyncio.get_running_loop()
+		create_task(loop.run_in_executor(None, self.wait))
+
+	def wait(self):
+		p = self.p
+		try: p.wait()
+		except: pass
+		if p is self.p:
 			self.finish()
-			return
-
-		player = AudioReader(audio)
-		self.player = player
-		player.end.connect(self.finish)
-		mixer.add(player)
 	
 	def stop(self):
-		self.player.close()
-		self.player = None
+		self.p.stop()
+		self.p = None
 		super().stop()
 	
 	def get_info(self):
