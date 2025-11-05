@@ -11,7 +11,10 @@ from wsignals import Signal
 import playsound3
 
 from bmaster import sounds
+from bmaster.logs import main_logger
 
+
+logger = main_logger.getChild('queries')
 
 if TYPE_CHECKING:
 	from bmaster.icoms import Icom
@@ -172,14 +175,22 @@ class SoundQuery(Query):
 		# self.player = player
 		# player.end.connect(self.finish)
 		# mixer.add(player)
-		self.p = playsound3.playsound(f'data/sounds/{self.sound_name}', block=False)
+		logger.info('starting playback')
+		try:
+			self.p = playsound3.playsound(f'data/sounds/{self.sound_name}', block=False)
+		except Exception as e:
+			logger.error('failed to start playback', exc_info=e)
+			self.finish()
+			return
 		loop = asyncio.get_running_loop()
 		loop.run_in_executor(None, self.wait)
+		logger.info('scheduled playback')
 
 	def wait(self):
 		p = self.p
 		try: p.wait()
-		except: pass
+		except Exception as e: logger.error('playback unblock with exception', exc_info=e)
+		else: logger.info('playback unblocked normally')
 		if p is self.p:
 			self.finish()
 	
