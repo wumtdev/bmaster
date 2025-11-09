@@ -19,31 +19,34 @@ output: AudioOutput = AudioOutput(
 )
 output.connect(output_mixer)
 
-def out_callback(outdata, frames, time, status):
-	duration = frames/RATE
-	frame = output.tick(duration)
-
-	audio = frame.audio
-	if not audio: return
-
-	data = audio.data
-	outdata[:len(data)] = data
-
-out_stream = sd.OutputStream(
-	samplerate=RATE,
-	blocksize=int(RATE * DELAY),
-	channels=CHANNELS,
-	dtype=np.float32,
-	callback=out_callback
-)
-
+out_stream = None
 
 async def start():
+	global out_stream
 	logger.info('Starting output stream...')
+
+	def _out_callback(outdata, frames, time, status):
+		duration = frames/RATE
+		frame = output.tick(duration)
+		audio = frame.audio
+		if not audio: return
+		data = audio.data
+		outdata[:len(data)] = data
+	
+	out_stream = sd.OutputStream(
+		samplerate=RATE,
+		blocksize=int(RATE * DELAY),
+		channels=CHANNELS,
+		dtype=np.float32,
+		callback=_out_callback
+	)
+
 	out_stream.start()
 	logger.info('Output stream started')
 
 async def stop():
+	global out_stream
 	logger.info('Closing output stream...')
-	out_stream.close()
+	if out_stream is not None:
+		out_stream.close()
 	logger.info('Output stream closed')
