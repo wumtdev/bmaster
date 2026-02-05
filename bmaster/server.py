@@ -24,7 +24,7 @@ class CORSConfig(BaseModel):
 class SSLConfig(BaseModel):
 	enabled: bool = False
 	cert_path: Path = Path('data/cert.pem')
-	key_path: Path = Path('data/cert.pem')
+	key_path: Path = Path('data/key.pem')
 
 class ServerConfig(BaseModel):
 	cors: CORSConfig = Field(default_factory=CORSConfig)

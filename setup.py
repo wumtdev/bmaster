@@ -6,40 +6,49 @@ import requests
 import zipfile
 import io
 
-BASE_PATH = Path("data")
+DATA_PATH = Path("data")
 STATIC_PATH = Path("static")
-DEFAULT_CONFIG_FILE = Path("defaults/config.yml")
+DEFAULT_CONFIG_PATH = Path("defaults/config.yml")
+SSL_KEY_PATH = DATA_PATH / 'key.pem'
+SSL_CERT_PATH = DATA_PATH / 'cert.pem'
+CONFIG_PATH = DATA_PATH / 'config.yml'
+SOUNDS_PATH = DATA_PATH / 'sounds'
+LOGS_PATH = DATA_PATH / 'logs.log'
 
 # Data Setup
-print(f"[-] Checking for directory: {BASE_PATH}...")
+print(f"[-] Checking for directory: {DATA_PATH}...")
 
-if not BASE_PATH.exists() or not any(BASE_PATH.iterdir()):
-	BASE_PATH.mkdir(parents=True, exist_ok=True)
-	print(f"[+] Directory '{BASE_PATH}' checked/created.")
+DATA_PATH.mkdir(parents=True, exist_ok=True)
+print(f"[+] Directory '{DATA_PATH}' checked/created.")
 
-	(BASE_PATH / "sounds").mkdir(parents=True, exist_ok=True)
-	print(f"[+] Directory '{BASE_PATH / 'sounds'}' checked/created.")
+SOUNDS_PATH.mkdir(parents=True, exist_ok=True)
+print(f"[+] Directory '{SOUNDS_PATH}' checked/created.")
 
-	# config.yml
-	config_path = BASE_PATH / "config.yml"
-	if not config_path.exists() and DEFAULT_CONFIG_FILE.exists():
-		config_text = DEFAULT_CONFIG_FILE.read_text(encoding="utf-8")
-		config_text.replace('$auth.jwt.secret_key', secrets.token_hex(32))
+# config.yml
+if not CONFIG_PATH.exists() and DEFAULT_CONFIG_PATH.exists():
+	config_text = DEFAULT_CONFIG_PATH.read_text(encoding="utf-8") \
+		.replace('$auth.jwt.secret_key', secrets.token_hex(32))
 
-		with config_path.open("w", encoding="utf-8") as f:
-			f.write(config_text)
-		print("[+] Config file 'config.yml' created.")
+	with CONFIG_PATH.open("w", encoding="utf-8") as f:
+		f.write(config_text)
+	print("[+] Config file 'config.yml' created.")
 
-	# logs.log
-	logs_path = BASE_PATH / "logs.log"
-	if not logs_path.exists():
-		logs_path.touch()
-		print("[+] Log file 'logs.log' created.")
+# logs.log
+if not LOGS_PATH.exists():
+	LOGS_PATH.touch()
+	print("[+] Log file 'logs.log' created.")
 
+
+if not SSL_KEY_PATH.exists() and not SSL_CERT_PATH.exists():
+	from cert_setup import setup_cert
+	print('[-] Generating self-signed certificate...')
+	setup_cert(SSL_KEY_PATH, SSL_CERT_PATH)
+	print('[+] Generated self-signed certificate')
 else:
-	print(f"[!] Directory '{BASE_PATH}' already exists and is not empty. Skipping...")
+	print('[!] Certificate already exists, skipped generation')
 
 print("[+] Data directory and app data created")
+
 
 # Static Setup 
 print(f"[-] Checking for directory: {STATIC_PATH}...")

@@ -8,6 +8,7 @@ dependencies = [
     "aiosqlite>=0.21.0",
     "anyio>=4.9.0",
     "apscheduler>=3.11.0",
+    "cryptography>=46.0.4",
     "fastapi>=0.116.1",
     "miniaudio>=1.61",
     "passlib[bcrypt]>=1.7.4",

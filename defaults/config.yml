@@ -23,6 +23,10 @@ icoms:
       name: "Главный"
       direct: true
 
+server:
+  ssl:
+    enabled: true
+
 roles:
   init: true
   roles:
