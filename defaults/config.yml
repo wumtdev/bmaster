@@ -37,6 +37,7 @@ roles:
       - bmaster.icoms.queries.audio
       - bmaster.icoms.queries.sound
       - bmaster.icoms.queries.stream
+      - bmaster.settings.volume
       - school.manage
 
     admin:
@@ -51,3 +52,5 @@ roles:
       - bmaster.accounts.manage
       - bmaster.roles.manage
       - bmaster.scripting.manage
+      - bmaster.settings.reboot
+      - bmaster.settings.volume

@@ -24,10 +24,12 @@ async def start():
 
 	from bmaster.api import scripting
 	from bmaster.api import sounds
+	from bmaster.api import settings
 
 	logger.info('Including routers...')
 
 	api.include_router(sounds.router, prefix='/sounds')
+	api.include_router(settings.router, prefix='/settings')
 	app.include_router(api, prefix='/api')
 
 	logger.info('Started')

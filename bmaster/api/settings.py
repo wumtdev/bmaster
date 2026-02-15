@@ -1,0 +1,110 @@
+import platform
+import re
+import subprocess
+
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
+
+from bmaster.api.auth import require_permissions
+
+
+router = APIRouter(tags=['settings'])
+
+
+class VolumeSetRequest(BaseModel):
+    volume: int = Field(..., ge=0, le=100)
+
+
+class VolumeResponse(BaseModel):
+    ok: bool
+    volume: int
+
+
+@router.post('/reboot', dependencies=[Depends(require_permissions('bmaster.settings.reboot'))])
+async def reboot() -> bool:
+    try:
+        system = platform.system()
+
+        if system == "Linux":
+            subprocess.Popen(["sh", "-c", "sleep 5 && reboot"])
+
+        elif system == "Windows":
+            subprocess.Popen(["shutdown", "/r", "/t", "5"])
+
+        else:
+            return False
+
+        return True
+
+    except Exception:
+        return False
+
+def set_system_volume(percent: int) -> bool:
+    system = platform.system()
+
+    try:
+        if system == "Linux":
+            subprocess.run(
+                ["pactl", "set-sink-volume", "@DEFAULT_SINK@", f"{percent}%"],
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            return True
+
+        elif system == "Windows":
+            # TODO: Make changing volume on Windows
+            return False
+
+        return False
+
+    except Exception:
+        return False
+
+
+def get_system_volume() -> int | None:
+    system = platform.system()
+    try:
+        if system == "Linux":
+            result = subprocess.run(
+                ["pactl", "get-sink-volume", "@DEFAULT_SINK@"],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+
+            match = re.search(r"(\d+)%", result.stdout)
+            if not match:
+                return None
+
+            return int(match.group(1))
+
+        elif system == "Windows":
+            # TODO: Make getting volume on Windows
+            return None
+
+    except Exception:
+        return None
+
+
+@router.put(
+    "/volume",
+    response_model=VolumeResponse,
+    dependencies=[Depends(require_permissions("bmaster.settings.volume"))]
+)
+async def set_volume(req: VolumeSetRequest) -> VolumeResponse:
+    ok = set_system_volume(req.volume)
+    if not ok:
+        raise HTTPException(status_code=500)
+    return VolumeResponse(ok=True, volume=req.volume)
+
+
+@router.get("/volume", response_model=VolumeResponse, dependencies=[Depends(require_permissions("bmaster.settings.volume"))])
+async def get_volume() -> VolumeResponse:
+    res = get_system_volume()
+    if res is None:
+        raise HTTPException(status_code=500)
+    return VolumeResponse(ok=True, volume=res)
+
+
+
