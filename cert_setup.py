@@ -1,200 +1,159 @@
-from cryptography import x509
-from cryptography.x509.oid import NameOID
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import rsa
-from cryptography.hazmat.primitives import serialization
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
 import ipaddress
+import re
 import socket
+import subprocess
 
-def get_local_ips():
-    """Get all local IP addresses"""
-    ips = []
-    
-    # Get hostname and its IP
-    hostname = socket.gethostname()
-    try:
-        host_ip = socket.gethostbyname(hostname)
-        ips.append(host_ip)
-    except:
-        pass
-    
-    # Get all network interfaces
-    try:
-        # This gets all addresses for the current hostname
-        addr_info = socket.getaddrinfo(hostname, None)
-        for info in addr_info:
-            ip = info[4][0]
-            # Filter out IPv6 link-local and only keep IPv4 for simplicity
-            # Remove the next two lines if you want IPv6 too
-            if ':' not in ip:  # Simple IPv4 check
-                if ip not in ips:
-                    ips.append(ip)
-    except:
-        pass
-    
-    # Always include localhost
-    if '127.0.0.1' not in ips:
-        ips.append('127.0.0.1')
-    
-    return ips
-
-def get_hostnames():
-    """Get hostname and FQDN"""
-    names = []
-    
-    # Get hostname
-    hostname = socket.gethostname()
-    names.append(hostname)
-    
-    # Get FQDN
-    try:
-        fqdn = socket.getfqdn()
-        if fqdn != hostname and fqdn not in names:
-            names.append(fqdn)
-    except:
-        pass
-    
-    # Always include localhost
-    if 'localhost' not in names:
-        names.append('localhost')
-    
-    return names
-
-def generate_auto_self_signed_cert(days_valid=365, extra_ips=None, extra_dns=None):
-    """
-    Generate self-signed certificate with auto-detected network info
-    
-    Args:
-        days_valid: Certificate validity period
-        extra_ips: Additional IP addresses to include (list of strings)
-        extra_dns: Additional DNS names to include (list of strings)
-    
-    Returns:
-        tuple: (private_key_pem, cert_der, fingerprint_hex, cert_info)
-    """
-    
-    # Auto-detect network information
-    ip_addresses = get_local_ips()
-    dns_names = get_hostnames()
-    
-    # Add any extra IPs/DNS names provided
-    if extra_ips:
-        ip_addresses.extend([ip for ip in extra_ips if ip not in ip_addresses])
-    if extra_dns:
-        dns_names.extend([name for name in extra_dns if name not in dns_names])
-    
-    # Use first DNS name or first IP as Common Name
-    common_name = dns_names[0] if dns_names else ip_addresses[0]
-    
-    # Generate private key
-    private_key = rsa.generate_private_key(
-        public_exponent=65537,
-        key_size=4096,
-    )
-    
-    # Minimal subject/issuer
-    subject = issuer = x509.Name([
-        x509.NameAttribute(NameOID.COMMON_NAME, common_name),
-    ])
-    
-    # Build certificate
-    cert_builder = x509.CertificateBuilder() \
-        .subject_name(subject) \
-        .issuer_name(issuer) \
-        .public_key(private_key.public_key()) \
-        .serial_number(x509.random_serial_number()) \
-        .not_valid_before(datetime.utcnow()) \
-        .not_valid_after(datetime.utcnow() + timedelta(days=days_valid))
-    
-    # Build SAN list
-    san_list = []
-    for dns_name in dns_names:
-        san_list.append(x509.DNSName(dns_name))
-    for ip in ip_addresses:
-        try:
-            san_list.append(x509.IPAddress(ipaddress.ip_address(ip)))
-        except ValueError:
-            # Skip invalid IPs
-            pass
-    
-    cert_builder = cert_builder.add_extension(
-        x509.SubjectAlternativeName(san_list),
-        critical=False,
-    )
-    
-    # Basic constraints - mark as CA
-    cert_builder = cert_builder.add_extension(
-        x509.BasicConstraints(ca=True, path_length=0),
-        critical=True,
-    )
-    
-    # Sign certificate
-    certificate = cert_builder.sign(private_key, hashes.SHA256())
-    
-    # Serialize
-    private_key_pem = private_key.private_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PrivateFormat.TraditionalOpenSSL,
-        encryption_algorithm=serialization.NoEncryption()
-    )
-    
-    cert_der = certificate.public_bytes(serialization.Encoding.PEM)
-    fingerprint = certificate.fingerprint(hashes.SHA256())
-    fingerprint_hex = ":".join([f"{b:02X}" for b in fingerprint])
-    
-    # Prepare info dict
-    cert_info = {
-        'common_name': common_name,
-        'ip_addresses': ip_addresses,
-        'dns_names': dns_names,
-        'valid_days': days_valid,
-        'fingerprint': fingerprint_hex
-    }
-    
-    return private_key_pem, cert_der, fingerprint_hex, cert_info
+from cryptography import x509
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.x509.oid import NameOID
 
 
-# Simple usage - fully automatic
-def setup_cert(key_path, cert_path):
-    print("Generating self-signed certificate...")
-    print("Auto-detecting network configuration...\n")
-    
-    # Generate with auto-detection
-    private_key, cert_der, fingerprint, info = generate_auto_self_signed_cert(
-        days_valid=365 * 10,
-    )
-    
-    # Save files
-    with open(key_path, "wb") as f:
-        f.write(private_key)
-    
-    with open(cert_path, "wb") as f:
-        f.write(cert_der)
-    
-    # Print certificate info
-    print("Certificate generated successfully!")
-    print(f"\nCommon Name: {info['common_name']}")
-    print(f"\nIP Addresses included:")
-    for ip in info['ip_addresses']:
-        print(f"  - {ip}")
-    print(f"\nDNS Names included:")
-    for dns in info['dns_names']:
-        print(f"  - {dns}")
-    print(f"\nValid for: {info['valid_days']} days")
-    print(f"\nSHA-256 Fingerprint:")
-    print(f"  {info['fingerprint']}")
-    print("\nFiles created:")
-    print(f"  - {key_path} (KEEP SECRET)")
-    print(f"  - {cert_path} (distribute to clients)")
-
-
-def verify_cert_validity(cert_path):
-    with open(cert_path, "r") as f:
-        data = f.read()
-    cert = x509.load_pem_x509_certificate(data)
-    
-    if datetime.utcnow() > cert.not_valid_after_utc:
+def setup_cert(key_path, cert_path, days_valid=3650, regenerate: bool = False):
+    key_path = Path(key_path)
+    cert_path = Path(cert_path)
+    if not regenerate and key_path.exists() and cert_path.exists():
+        print("[!] Certificate already exists, skipped generation")
         return False
-    
+
+    dns_names = ["localhost"]
+    ip_map = {"127.0.0.1": None}
+
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.connect(("1.1.1.1", 80))
+            primary_ip = ipaddress.IPv4Address(s.getsockname()[0])
+            if not primary_ip.is_loopback and not primary_ip.is_multicast and not primary_ip.is_unspecified:
+                ip_map[str(primary_ip)] = None
+    except Exception:
+        pass
+
+    try:
+        _, _, host_ips = socket.gethostbyname_ex(socket.gethostname())
+        for ip in host_ips:
+            parsed_ip = ipaddress.IPv4Address(ip)
+            if not parsed_ip.is_loopback and not parsed_ip.is_multicast and not parsed_ip.is_unspecified:
+                ip_map[str(parsed_ip)] = None
+    except Exception:
+        pass
+
+    try:
+        for info in socket.getaddrinfo(socket.gethostname(), None, family=socket.AF_INET):
+            ip = info[4][0]
+            parsed_ip = ipaddress.IPv4Address(ip)
+            if not parsed_ip.is_loopback and not parsed_ip.is_multicast and not parsed_ip.is_unspecified:
+                ip_map[str(parsed_ip)] = None
+    except Exception:
+        pass
+
+    ip_tool_output = ""
+    try:
+        ip_tool_output = subprocess.run(
+            ["ip", "-o", "-f", "inet", "addr", "show"],
+            check=False,
+            capture_output=True,
+            text=True,
+        ).stdout
+    except Exception:
+        pass
+
+    for ip in re.findall(r"inet\s+(\d+\.\d+\.\d+\.\d+)(?:/\d+)?", ip_tool_output):
+        try:
+            parsed_ip = ipaddress.IPv4Address(ip)
+            if not parsed_ip.is_loopback and not parsed_ip.is_multicast and not parsed_ip.is_unspecified:
+                ip_map[str(parsed_ip)] = None
+        except ValueError:
+            pass
+
+    ifconfig_output = ""
+    try:
+        ifconfig_output = subprocess.run(
+            ["ifconfig"],
+            check=False,
+            capture_output=True,
+            text=True,
+        ).stdout
+    except Exception:
+        pass
+
+    for ip in re.findall(r"inet\s+(\d+\.\d+\.\d+\.\d+)", ifconfig_output):
+        try:
+            parsed_ip = ipaddress.IPv4Address(ip)
+            if not parsed_ip.is_loopback and not parsed_ip.is_multicast and not parsed_ip.is_unspecified:
+                ip_map[str(parsed_ip)] = None
+        except ValueError:
+            pass
+
+    ipconfig_output = ""
+    try:
+        ipconfig_output = subprocess.run(
+            ["ipconfig"],
+            check=False,
+            capture_output=True,
+            text=True,
+        ).stdout
+    except Exception:
+        pass
+
+    for line in ipconfig_output.splitlines():
+        line_lower = line.lower()
+        if "ipv4" not in line_lower:
+            continue
+        ip_match = re.search(r"(\d{1,3}(?:\.\d{1,3}){3})", line)
+        if not ip_match:
+            continue
+        try:
+            parsed_ip = ipaddress.IPv4Address(ip_match.group(1))
+            if not parsed_ip.is_loopback and not parsed_ip.is_multicast and not parsed_ip.is_unspecified:
+                ip_map[str(parsed_ip)] = None
+        except ValueError:
+            pass
+
+    ip_objects = sorted((ipaddress.IPv4Address(ip) for ip in ip_map), key=int)
+    common_name = "localhost"
+
+    private_key = rsa.generate_private_key(public_exponent=65537, key_size=4096)
+    subject = issuer = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, common_name)])
+    now = datetime.now(UTC)
+
+    san_entries = [x509.DNSName(name) for name in dns_names]
+    san_entries.extend(x509.IPAddress(ip) for ip in ip_objects)
+
+    certificate = (
+        x509.CertificateBuilder()
+        .subject_name(subject)
+        .issuer_name(issuer)
+        .public_key(private_key.public_key())
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(now)
+        .not_valid_after(now + timedelta(days=days_valid))
+        .add_extension(x509.SubjectAlternativeName(san_entries), critical=False)
+        .add_extension(x509.BasicConstraints(ca=True, path_length=0), critical=True)
+        .sign(private_key=private_key, algorithm=hashes.SHA256())
+    )
+
+    key_path.parent.mkdir(parents=True, exist_ok=True)
+    cert_path.parent.mkdir(parents=True, exist_ok=True)
+    key_path.write_bytes(
+        private_key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.TraditionalOpenSSL,
+            encryption_algorithm=serialization.NoEncryption(),
+        )
+    )
+    cert_path.write_bytes(certificate.public_bytes(serialization.Encoding.PEM))
+
+    fingerprint = ":".join(f"{b:02X}" for b in certificate.fingerprint(hashes.SHA256()))
+    print(" === Certificate info ===")
+    print(f"Common Name: {common_name}")
+    print("IP addresses in SAN:")
+    for ip in ip_objects:
+        print(f"  - {ip}")
+    print(f"DNS names in SAN: {', '.join(dns_names)}")
+    print(f"Valid for: {days_valid} days")
+    print(f"SHA-256 fingerprint: {fingerprint}")
+    print(f"Key: {key_path}")
+    print(f"Certificate: {cert_path}")
     return True

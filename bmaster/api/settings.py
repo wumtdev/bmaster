@@ -249,3 +249,15 @@ async def health():
 #         )
 
 #     return {"status": "ok"}
+
+@router.post(
+    "/net_settings",
+    dependencies=[Depends(require_permissions("bmaster.settings.net_settings.save"))],
+)
+async def save_network_settings(
+    ip: str = Form(...),
+    mask: str = Form(...),
+    gateway: str = Form(...),
+    dns: str = Form(...),
+):
+    print(ip, mask, gateway, dns)

@@ -1,4 +1,5 @@
-from fastapi import APIRouter
+from fastapi import HTTPException, APIRouter
+
 
 from bmaster.server import app
 from bmaster.logs import main_logger
@@ -32,6 +33,9 @@ async def start():
 	api.include_router(sounds.router, prefix='/sounds')
 	api.include_router(settings.router, prefix='/settings')
 	api.include_router(certs.router, prefix='/certs')
+	@api.get('/*', status_code=404)
+	async def not_found():
+		raise HTTPException(status_code=404, detail='Not Found')
 	app.include_router(api, prefix='/api')
 
 	logger.info('Started')

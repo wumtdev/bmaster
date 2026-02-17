@@ -1,4 +1,6 @@
 from pathlib import Path
+from cert_setup import setup_cert
+import argparse
 import secrets
 import json
 import requests
@@ -14,6 +16,14 @@ CONFIG_PATH = DATA_PATH / 'config.yml'
 SOUNDS_PATH = DATA_PATH / 'sounds'
 LOGS_PATH = DATA_PATH / 'logs.log'
 FRONTEND_META_PATH = STATIC_PATH / '.frontend_release.json'
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+	"--update-cert",
+	action="store_true",
+	help="Force regenerate SSL certificate even if it already exists",
+)
+args, _ = parser.parse_known_args()
 
 # Data Setup
 print(f"[-] Checking for directory: {DATA_PATH}...")
@@ -39,13 +49,20 @@ if not LOGS_PATH.exists():
 	print("[+] Log file 'logs.log' created.")
 
 
-if not SSL_KEY_PATH.exists() and not SSL_CERT_PATH.exists():
-	from cert_setup import setup_cert
-	print('[-] Generating self-signed certificate...')
-	setup_cert(SSL_KEY_PATH, SSL_CERT_PATH)
-	print('[+] Generated self-signed certificate')
+if args.update_cert:
+	print('[-] Updating self-signed certificate...')
 else:
-	print('[!] Certificate already exists, skipped generation')
+	print('[-] Generating self-signed certificate...')
+
+cert_generated = setup_cert(
+	SSL_KEY_PATH,
+	SSL_CERT_PATH,
+	regenerate=args.update_cert,
+)
+if cert_generated and args.update_cert:
+	print('[+] Certificate updated')
+elif cert_generated:
+	print('[+] Generated self-signed certificate')
 
 print("[+] Data directory and app data created")
 
@@ -99,3 +116,6 @@ try:
 
 except Exception as e:
 	print(f"[!] Failed to download or extract frontend: {e}")
+
+if args.update_cert and cert_generated:
+	print("[!] Certificate has been updated. Download it again and add it to trusted on all clients.")
