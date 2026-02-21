@@ -450,13 +450,16 @@ def set_system_volume(percent: int) -> bool:
 
     try:
         if system == "Linux":
-            subprocess.run(
-                ["pactl", "set-sink-volume", "@DEFAULT_SINK@", f"{percent}%"],
-                check=True,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-            return True
+            try:
+                subprocess.run(
+                    ["pactl", "set-sink-volume", "@DEFAULT_SINK@", f"{percent}%"],
+                    check=True,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+                return True
+            except subprocess.CalledProcessError:
+                pass
 
         elif system == "Windows":
             # TODO: Make changing volume on Windows
@@ -472,18 +475,18 @@ def get_system_volume() -> int | None:
     system = platform.system()
     try:
         if system == "Linux":
-            result = subprocess.run(
-                ["pactl", "get-sink-volume", "@DEFAULT_SINK@"],
-                capture_output=True,
-                text=True,
-                check=True
-            )
-
-            match = re.search(r"(\d+)%", result.stdout)
-            if not match:
-                return None
-
-            return int(match.group(1))
+            try:
+                result = subprocess.run(
+                    ["pactl", "get-sink-volume", "@DEFAULT_SINK@"],
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
+                match = re.search(r"(\d+)%", result.stdout)
+                if match:
+                    return int(match.group(1))
+            except subprocess.CalledProcessError:
+                pass
 
         elif system == "Windows":
             # TODO: Make getting volume on Windows

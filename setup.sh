@@ -3,29 +3,33 @@ set -euo pipefail
 
 echo "[=] Installation..."
 
-# ---------- helpers ----------
-need_root_for_apt() {
-  if command -v apt-get >/dev/null 2>&1; then
-    return 0
-  fi
-  return 1
+# ---------- helpers ---------
+is_root() {
+  [ "${EUID:-$(id -u)}" -eq 0 ]
 }
 
-apt_install() {
-  local pkgs=("$@")
-  if [ "${EUID:-$(id -u)}" -ne 0 ]; then
-    sudo apt-get update
-    sudo apt-get install -y "${pkgs[@]}"
+run_as_root() {
+  if is_root; then
+    "$@"
   else
-    apt-get update
-    apt-get install -y "${pkgs[@]}"
+    sudo "$@"
   fi
+}
+
+need_apt() {
+  command -v apt-get >/dev/null 2>&1
+}
+
+apt_install_once() {
+  local pkgs=("$@")
+  run_as_root apt-get update
+  run_as_root apt-get install -y "${pkgs[@]}"
 }
 
 # ---------- ensure OS deps (Debian-like) ----------
-if need_root_for_apt; then
-  echo "[-] Ensuring base packages (curl, ca-certificates)..."
-  apt_install curl ca-certificates
+if need_apt; then
+  echo "[-] Ensuring base packages (curl, ca-certificates, portaudio)..."
+  apt_install_once curl ca-certificates portaudio19-dev libffi-dev build-essential ffmpeg pulseaudio python3 python3-pip python3-venv
   echo "[+] Base packages are installed"
 else
   echo "[!] apt-get not found. This script expects Debian/Ubuntu-like systems."
@@ -35,22 +39,17 @@ fi
 # ---------- ensure python + pip ----------
 echo "[-] Checking if Python 3 is installed..."
 if ! command -v python3 >/dev/null 2>&1; then
-  echo "[!] Python3 not found. Installing..."
-  apt_install python3
+  echo "[!] Python3 is still missing after package install."
+  exit 1
 fi
 echo "[+] Python 3 is installed"
 
 echo "[-] Checking if pip is installed..."
 if ! command -v pip3 >/dev/null 2>&1; then
-  echo "[!] pip not found. Installing python3-pip..."
-  apt_install python3-pip
+  echo "[!] pip is still missing after package install."
+  exit 1
 fi
 echo "[+] pip is installed"
-
-# (Optional) venv module is often useful even if you use uv
-echo "[-] Ensuring python3-venv..."
-apt_install python3-venv
-echo "[+] python3-venv is installed"
 
 # ---------- install uv (official script) ----------
 echo "[-] Installing uv via official script..."
@@ -60,7 +59,6 @@ echo "[+] uv installed"
 # ---------- resolve uv path ----------
 UV_BIN="/usr/bin/uv"
 if [ ! -x "$UV_BIN" ]; then
-  # Fallback: common install location if PATH isn't updated yet
   if [ -x "$HOME/.local/bin/uv" ]; then
     UV_BIN="$HOME/.local/bin/uv"
   else
@@ -86,11 +84,73 @@ echo "[+] Installed requirements"
 
 # ---------- setup ----------
 echo "[-] Creating data directory and app data..."
-"$UV_BIN" run --no-sync setup.py
+"$UV_BIN" run -m bmaster.maintenance bootstrap
 echo "[+] Setup completed"
 
+# ---------- systemd service ----------
+if ! command -v systemctl >/dev/null 2>&1; then
+  echo "[!] systemctl not found. This installer requires systemd."
+  exit 1
+fi
+
+REPO_DIR="$(pwd -P)"
+SERVICE_NAME="bmaster.service"
+SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}"
+SERVICE_USER="${SUDO_USER:-${USER:-}}"
+if [ -z "$SERVICE_USER" ]; then
+  SERVICE_USER="$(id -un)"
+fi
+
+PYTHON_BIN="${REPO_DIR}/.venv/bin/python"
+MAIN_PY="${REPO_DIR}/main.py"
+if [ ! -x "$PYTHON_BIN" ]; then
+  echo "[!] Python executable not found in .venv: $PYTHON_BIN"
+  exit 1
+fi
+
+echo "[-] Creating systemd unit at ${SERVICE_FILE}..."
+TMP_UNIT="$(mktemp)"
+cat > "$TMP_UNIT" <<EOF
+[Unit]
+Description=bmaster service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=${SERVICE_USER}
+WorkingDirectory=${REPO_DIR}
+ExecStart=${UV_BIN} ${MAIN_PY}
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+run_as_root install -m 644 "$TMP_UNIT" "$SERVICE_FILE"
+rm -f "$TMP_UNIT"
+
+echo "[-] Reloading systemd daemon..."
+run_as_root systemctl daemon-reload
+echo "[+] systemd daemon reloaded"
+
+echo "[-] Enabling ${SERVICE_NAME}..."
+run_as_root systemctl enable "$SERVICE_NAME"
+echo "[+] ${SERVICE_NAME} enabled"
+
 echo "[=] Installation finished"
-echo "---------------------------------------------------------"
+echo
+echo "#############################################################"
+echo "#  IMPORTANT: REBOOT REQUIRED                              #"
+echo "#                                                           #"
+echo "#  Please reboot your system now to ensure all             #"
+echo "#  installed libraries and services work correctly.        #"
+echo "#                                                           #"
+echo "#  Command: sudo reboot                                    #"
+echo "#############################################################"
+echo
 echo "INFO: Project uses uv. Prefer uv instead of pip for dependency management."
 echo "INFO: Docs: https://docs.astral.sh/uv/getting-started/"
-echo "INFO: Run the app: $UV_BIN run --no-sync main.py"
+echo "INFO: Next step: sudo systemctl start ${SERVICE_NAME}"
+echo "INFO: Check status: sudo systemctl status ${SERVICE_NAME}"
