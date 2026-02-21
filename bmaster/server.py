@@ -5,7 +5,6 @@ from typing import List, Optional
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 import uvicorn
@@ -47,7 +46,6 @@ async def start():
 	config = ServerConfig.model_validate(configs.get('server', None) or ServerConfig())
 
 	cors_config = config.cors
-	app.add_middleware(HTTPSRedirectMiddleware)
 	app.add_middleware(
 		CORSMiddleware,
 		allow_origins=cors_config.allow_origins,
