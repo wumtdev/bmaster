@@ -55,4 +55,3 @@ roles:
       - bmaster.settings.reboot
       - bmaster.settings.volume
       - bmaster.settings.updates
-      - bmaster.settings.net_settings

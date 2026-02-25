@@ -32,7 +32,7 @@ if need_apt; then
   apt_install_once curl ca-certificates portaudio19-dev libffi-dev build-essential ffmpeg pulseaudio python3 python3-pip python3-venv
   echo "[+] Base packages are installed"
 else
-  echo "[!] apt-get not found. This script expects Debian/Ubuntu-like systems."
+  echo "[!] apt-get not found. This script expects Debian/Ubuntu-like system."
   exit 1
 fi
 
