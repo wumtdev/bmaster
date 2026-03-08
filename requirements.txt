@@ -2,8 +2,8 @@ anyio
 uvicorn
 fastapi
 sounddevice
-git+https://github.com/wumtdev/wauxio.git
-git+https://github.com/wumtdev/wsignals.git
+wauxio
+wsignals
 aiosqlite
 SQLAlchemy
 APScheduler
@@ -11,4 +11,3 @@ pyjwt
 passlib[bcrypt]
 websockets
 python-multipart
-Jinja2
